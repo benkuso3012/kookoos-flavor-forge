@@ -90,6 +90,7 @@ const MenuPreview = () => {
                   <Button 
                     size="sm"
                     className="bg-primary hover:bg-primary/90 font-bold group"
+                    onClick={() => window.location.href = '/menu'}
                   >
                     ADD
                     <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
@@ -105,6 +106,7 @@ const MenuPreview = () => {
           <Button 
             size="lg"
             className="bg-gradient-primary text-white font-heading font-bold text-lg px-12 py-6 shadow-glow hover:shadow-xl transition-all"
+            onClick={() => window.location.href = '/menu'}
           >
             VIEW FULL MENU
             <ArrowRight className="w-5 h-5 ml-2" />
