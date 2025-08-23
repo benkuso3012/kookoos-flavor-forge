@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Star, ShoppingBag, Plus, Minus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from '@supabase/supabase-js';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import bombaBox from "@/assets/bomba-box.jpg";
@@ -13,6 +16,24 @@ import crispyChicken from "@/assets/crispy-chicken.jpg";
 const Menu = () => {
   const { toast } = useToast();
   const [cart, setCart] = useState<{[key: number]: number}>({});
+  const [user, setUser] = useState<User | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check authentication status
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const menuCategories = [
     {
@@ -22,7 +43,7 @@ const Menu = () => {
           id: 1,
           name: "Bomba Box",
           description: "Our signature fried chicken with spiced fries and drink",
-          price: 15000,
+          price: 15.00,
           image: bombaBox,
           badge: "SIGNATURE",
           rating: 4.9
@@ -31,7 +52,7 @@ const Menu = () => {
           id: 2,
           name: "Chicken Baga",
           description: "Crispy chicken burger with our secret sauce",
-          price: 12000,
+          price: 12.00,
           image: chickenCombo,
           badge: "POPULAR",
           rating: 4.8
@@ -45,7 +66,7 @@ const Menu = () => {
           id: 3,
           name: "Crispy Wings",
           description: "Golden crispy chicken wings with tangy orange sauce",
-          price: 8000,
+          price: 8.00,
           image: crispyChicken,
           badge: "SPICY",
           rating: 4.7
@@ -54,7 +75,7 @@ const Menu = () => {
           id: 4,
           name: "Chicken Strips",
           description: "Tender chicken strips with honey mustard sauce",
-          price: 10000,
+          price: 10.00,
           image: crispyChicken,
           badge: "NEW",
           rating: 4.6
@@ -88,6 +109,44 @@ const Menu = () => {
 
   const getTotalItems = () => {
     return Object.values(cart).reduce((total, quantity) => total + quantity, 0);
+  };
+
+  const proceedToCheckout = () => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to place an order",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
+    if (getTotalItems() === 0) {
+      toast({
+        title: "Empty cart",
+        description: "Please add items to your cart first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Convert cart to cart items format
+    const cartItems = Object.entries(cart).map(([itemId, quantity]) => {
+      const category = menuCategories.find(cat => 
+        cat.items.some(item => item.id === parseInt(itemId))
+      );
+      const item = category?.items.find(item => item.id === parseInt(itemId));
+      
+      return {
+        id: parseInt(itemId),
+        name: item?.name || '',
+        price: item?.price || 0,
+        quantity
+      };
+    }).filter(item => item.quantity > 0);
+
+    navigate("/checkout", { state: { cartItems } });
   };
 
   return (
@@ -147,7 +206,7 @@ const Menu = () => {
                       
                       <div className="flex items-center justify-between mb-4">
                         <span className="font-heading text-2xl font-bold text-primary">
-                          TSh {item.price.toLocaleString()}
+                          ${item.price.toFixed(2)}
                         </span>
                       </div>
 
@@ -194,15 +253,10 @@ const Menu = () => {
           <Button 
             size="lg"
             className="bg-primary hover:bg-primary/90 shadow-glow rounded-full px-6 py-6"
-            onClick={() => {
-              toast({
-                title: "Cart feature coming soon!",
-                description: "Full ordering system will be available soon.",
-              });
-            }}
+            onClick={proceedToCheckout}
           >
             <ShoppingBag className="w-5 h-5 mr-2" />
-            {getTotalItems()} Items
+            Checkout ({getTotalItems()})
           </Button>
         </div>
       )}
