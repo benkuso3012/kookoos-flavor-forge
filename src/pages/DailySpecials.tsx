@@ -38,26 +38,31 @@ const DailySpecials = () => {
   const fetchSpecials = async () => {
     const today = new Date().toISOString().split('T')[0];
     
-    const { data } = await supabase
-      .from('daily_specials')
-      .select(`
-        *,
-        menu_items (
-          id,
-          name,
-          description,
-          price,
-          image_url,
-          rating,
-          prep_time
-        )
-      `)
-      .eq('is_active', true)
-      .lte('start_date', today)
-      .gte('end_date', today);
+    try {
+      const { data } = await supabase
+        .from('daily_specials' as any)
+        .select(`
+          *,
+          menu_items (
+            id,
+            name,
+            description,
+            price,
+            image_url,
+            rating,
+            prep_time
+          )
+        `)
+        .eq('is_active', true)
+        .lte('start_date', today)
+        .gte('end_date', today);
 
-    if (data) {
-      setSpecials(data.filter(special => special.menu_items));
+      if (data) {
+        const validSpecials = data.filter((special: any) => special.menu_items) as DailySpecial[];
+        setSpecials(validSpecials);
+      }
+    } catch (error) {
+      console.error('Error fetching specials:', error);
     }
     setLoading(false);
   };

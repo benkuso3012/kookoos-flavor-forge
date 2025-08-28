@@ -11,13 +11,15 @@ interface LoyaltyCardProps {
   user: User | null;
 }
 
+interface LoyaltyData {
+  points: number;
+  totalEarned: number;
+  level: string;
+  nextReward: number;
+}
+
 const LoyaltyCard = ({ user }: LoyaltyCardProps) => {
-  const [loyaltyData, setLoyaltyData] = useState<{
-    points: number;
-    totalEarned: number;
-    level: string;
-    nextReward: number;
-  } | null>(null);
+  const [loyaltyData, setLoyaltyData] = useState<LoyaltyData | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -28,22 +30,46 @@ const LoyaltyCard = ({ user }: LoyaltyCardProps) => {
   const fetchLoyaltyData = async () => {
     if (!user) return;
 
-    const { data } = await supabase
-      .from('loyalty_points')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
+    try {
+      const { data } = await supabase
+        .from('loyalty_points' as any)
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-    if (data) {
-      const level = getLoyaltyLevel(data.total_earned);
-      const nextReward = getNextRewardThreshold(data.total_earned);
-      
-      setLoyaltyData({
-        points: data.points,
-        totalEarned: data.total_earned,
-        level: level.name,
-        nextReward
-      });
+      if (data) {
+        const level = getLoyaltyLevel(data.total_earned || 0);
+        const nextReward = getNextRewardThreshold(data.total_earned || 0);
+        
+        setLoyaltyData({
+          points: data.points || 0,
+          totalEarned: data.total_earned || 0,
+          level: level.name,
+          nextReward
+        });
+      } else {
+        // Create initial loyalty record
+        const { data: newData } = await supabase
+          .from('loyalty_points' as any)
+          .insert({
+            user_id: user.id,
+            points: 0,
+            total_earned: 0
+          })
+          .select()
+          .single();
+
+        if (newData) {
+          setLoyaltyData({
+            points: 0,
+            totalEarned: 0,
+            level: "Bronze",
+            nextReward: 1000
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching loyalty data:', error);
     }
   };
 

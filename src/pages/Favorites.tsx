@@ -40,25 +40,32 @@ const Favorites = () => {
   }, [navigate]);
 
   const fetchFavorites = async (userId: string) => {
-    const { data } = await supabase
-      .from('user_favorites')
-      .select(`
-        menu_items (
-          id,
-          name,
-          description,
-          price,
-          image_url,
-          rating,
-          is_spicy,
-          is_vegetarian,
-          prep_time
-        )
-      `)
-      .eq('user_id', userId);
+    try {
+      const { data } = await supabase
+        .from('user_favorites' as any)
+        .select(`
+          menu_items (
+            id,
+            name,
+            description,
+            price,
+            image_url,
+            rating,
+            is_spicy,
+            is_vegetarian,
+            prep_time
+          )
+        `)
+        .eq('user_id', userId);
 
-    if (data) {
-      setFavorites(data.map(item => item.menu_items).filter(Boolean));
+      if (data) {
+        const favoriteItems = data
+          .map((item: any) => item.menu_items)
+          .filter(Boolean) as FavoriteItem[];
+        setFavorites(favoriteItems);
+      }
+    } catch (error) {
+      console.error('Error fetching favorites:', error);
     }
     setLoading(false);
   };
@@ -66,13 +73,17 @@ const Favorites = () => {
   const removeFavorite = async (itemId: string) => {
     if (!user) return;
 
-    await supabase
-      .from('user_favorites')
-      .delete()
-      .eq('user_id', user.id)
-      .eq('menu_item_id', itemId);
+    try {
+      await supabase
+        .from('user_favorites' as any)
+        .delete()
+        .eq('user_id', user.id)
+        .eq('menu_item_id', itemId);
 
-    setFavorites(favorites.filter(item => item.id !== itemId));
+      setFavorites(favorites.filter(item => item.id !== itemId));
+    } catch (error) {
+      console.error('Error removing favorite:', error);
+    }
   };
 
   if (loading) {

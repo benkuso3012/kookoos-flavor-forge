@@ -25,14 +25,18 @@ const FavoritesButton = ({ itemId, user }: FavoritesButtonProps) => {
   const checkFavoriteStatus = async () => {
     if (!user) return;
 
-    const { data } = await supabase
-      .from('user_favorites')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('menu_item_id', itemId)
-      .single();
+    try {
+      const { data } = await supabase
+        .from('user_favorites' as any)
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('menu_item_id', itemId)
+        .maybeSingle();
 
-    setIsFavorite(!!data);
+      setIsFavorite(!!data);
+    } catch (error) {
+      console.error('Error checking favorite status:', error);
+    }
   };
 
   const toggleFavorite = async () => {
@@ -50,7 +54,7 @@ const FavoritesButton = ({ itemId, user }: FavoritesButtonProps) => {
     try {
       if (isFavorite) {
         await supabase
-          .from('user_favorites')
+          .from('user_favorites' as any)
           .delete()
           .eq('user_id', user.id)
           .eq('menu_item_id', itemId);
@@ -62,7 +66,7 @@ const FavoritesButton = ({ itemId, user }: FavoritesButtonProps) => {
         });
       } else {
         await supabase
-          .from('user_favorites')
+          .from('user_favorites' as any)
           .insert({
             user_id: user.id,
             menu_item_id: itemId
@@ -75,6 +79,7 @@ const FavoritesButton = ({ itemId, user }: FavoritesButtonProps) => {
         });
       }
     } catch (error) {
+      console.error('Error updating favorites:', error);
       toast({
         title: "Error",
         description: "Failed to update favorites",
