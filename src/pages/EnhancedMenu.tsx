@@ -63,22 +63,72 @@ const EnhancedMenu = () => {
   }, []);
 
   const fetchMenuData = async () => {
-    // Fetch categories
-    const { data: categoriesData } = await supabase
-      .from('menu_categories')
-      .select('*')
-      .order('sort_order');
+    try {
+      // For now, we'll use mock data since the tables might not exist yet
+      const mockCategories: MenuCategory[] = [
+        { id: "1", name: "Street Food Favorites", description: "Popular Tanzanian street food" },
+        { id: "2", name: "Grilled Specialties", description: "Grilled meats and vegetables" },
+        { id: "3", name: "Rice & Curry", description: "Traditional rice dishes with curry" },
+        { id: "4", name: "Snacks & Sides", description: "Light bites and side dishes" }
+      ];
 
-    // Fetch menu items
-    const { data: itemsData } = await supabase
-      .from('menu_items')
-      .select('*')
-      .eq('is_available', true);
+      const mockItems: MenuItem[] = [
+        {
+          id: "1",
+          name: "Beef Mishkaki",
+          description: "Grilled beef skewers marinated in traditional spices",
+          price: 12.99,
+          image_url: "/placeholder.svg",
+          rating: 4.8,
+          is_spicy: true,
+          is_vegetarian: false,
+          is_vegan: false,
+          is_gluten_free: true,
+          calories: 320,
+          prep_time: 15,
+          category_id: "1"
+        },
+        {
+          id: "2",
+          name: "Chicken Pilau",
+          description: "Aromatic rice dish with tender chicken and spices",
+          price: 14.99,
+          image_url: "/placeholder.svg",
+          rating: 4.7,
+          is_spicy: false,
+          is_vegetarian: false,
+          is_vegan: false,
+          is_gluten_free: false,
+          calories: 450,
+          prep_time: 20,
+          category_id: "3"
+        },
+        {
+          id: "3",
+          name: "Vegetable Samosas",
+          description: "Crispy pastries filled with spiced vegetables",
+          price: 8.99,
+          image_url: "/placeholder.svg",
+          rating: 4.6,
+          is_spicy: false,
+          is_vegetarian: true,
+          is_vegan: true,
+          is_gluten_free: false,
+          calories: 180,
+          prep_time: 10,
+          category_id: "4"
+        }
+      ];
 
-    if (categoriesData) setCategories(categoriesData);
-    if (itemsData) {
-      setMenuItems(itemsData);
-      setFilteredItems(itemsData);
+      setCategories(mockCategories);
+      setMenuItems(mockItems);
+      setFilteredItems(mockItems);
+    } catch (error) {
+      console.error('Error fetching menu data:', error);
+      // Set default empty arrays on error
+      setCategories([]);
+      setMenuItems([]);
+      setFilteredItems([]);
     }
     
     setLoading(false);

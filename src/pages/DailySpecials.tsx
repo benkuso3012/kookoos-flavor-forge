@@ -36,33 +36,47 @@ const DailySpecials = () => {
   }, []);
 
   const fetchSpecials = async () => {
-    const today = new Date().toISOString().split('T')[0];
-    
     try {
-      const { data } = await supabase
-        .from('daily_specials' as any)
-        .select(`
-          *,
-          menu_items (
-            id,
-            name,
-            description,
-            price,
-            image_url,
-            rating,
-            prep_time
-          )
-        `)
-        .eq('is_active', true)
-        .lte('start_date', today)
-        .gte('end_date', today);
+      // For now, we'll use mock data since the table might not exist yet
+      const mockSpecials: DailySpecial[] = [
+        {
+          id: "1",
+          title: "Lunch Special",
+          description: "Perfect for your midday meal",
+          discount_percentage: 20,
+          special_price: 11.99,
+          menu_items: {
+            id: "1",
+            name: "Beef Mishkaki",
+            description: "Grilled beef skewers marinated in traditional spices",
+            price: 14.99,
+            image_url: "/placeholder.svg",
+            rating: 4.8,
+            prep_time: 15
+          }
+        },
+        {
+          id: "2",
+          title: "Happy Hour Deal",
+          description: "Great for sharing with friends",
+          discount_percentage: 15,
+          special_price: 12.74,
+          menu_items: {
+            id: "2",
+            name: "Chicken Pilau",
+            description: "Aromatic rice dish with tender chicken and spices",
+            price: 14.99,
+            image_url: "/placeholder.svg",
+            rating: 4.7,
+            prep_time: 20
+          }
+        }
+      ];
 
-      if (data) {
-        const validSpecials = data.filter((special: any) => special.menu_items) as DailySpecial[];
-        setSpecials(validSpecials);
-      }
+      setSpecials(mockSpecials);
     } catch (error) {
       console.error('Error fetching specials:', error);
+      setSpecials([]);
     }
     setLoading(false);
   };

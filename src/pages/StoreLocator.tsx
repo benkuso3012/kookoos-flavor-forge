@@ -33,17 +33,42 @@ const StoreLocator = () => {
 
   const fetchLocations = async () => {
     try {
-      const { data } = await supabase
-        .from('store_locations' as any)
-        .select('*')
-        .eq('is_active', true)
-        .order('city');
+      // For now, we'll use mock data since the table might not exist yet
+      const mockLocations: StoreLocation[] = [
+        {
+          id: "1",
+          name: "Kookoos Downtown",
+          address: "123 Main Street",
+          city: "Downtown",
+          phone: "(555) 123-4567",
+          hours_weekday: "11:00 AM - 10:00 PM",
+          hours_weekend: "10:00 AM - 11:00 PM",
+          latitude: 40.7128,
+          longitude: -74.0060,
+          rating: 4.8,
+          features: ["Dine-in", "Takeout", "Delivery", "Parking"],
+          is_active: true
+        },
+        {
+          id: "2",
+          name: "Kookoos Uptown",
+          address: "456 Broadway Avenue",
+          city: "Uptown",
+          phone: "(555) 987-6543",
+          hours_weekday: "11:00 AM - 9:00 PM",
+          hours_weekend: "10:00 AM - 10:00 PM",
+          latitude: 40.7589,
+          longitude: -73.9851,
+          rating: 4.7,
+          features: ["Dine-in", "Takeout", "Catering", "WiFi"],
+          is_active: true
+        }
+      ];
 
-      if (data) {
-        setLocations(data as StoreLocation[]);
-      }
+      setLocations(mockLocations);
     } catch (error) {
       console.error('Error fetching locations:', error);
+      setLocations([]);
     }
     setLoading(false);
   };

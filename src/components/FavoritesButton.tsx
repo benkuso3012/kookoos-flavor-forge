@@ -26,14 +26,11 @@ const FavoritesButton = ({ itemId, user }: FavoritesButtonProps) => {
     if (!user) return;
 
     try {
-      const { data } = await supabase
-        .from('user_favorites' as any)
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('menu_item_id', itemId)
-        .maybeSingle();
-
-      setIsFavorite(!!data);
+      // For now, we'll use local storage to simulate favorites
+      // This can be updated once the database is properly set up
+      const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+      const isFav = favorites.some((fav: any) => fav.itemId === itemId && fav.userId === user.id);
+      setIsFavorite(isFav);
     } catch (error) {
       console.error('Error checking favorite status:', error);
     }
@@ -52,26 +49,23 @@ const FavoritesButton = ({ itemId, user }: FavoritesButtonProps) => {
     setLoading(true);
 
     try {
+      // For now, we'll use local storage to simulate favorites
+      const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+      
       if (isFavorite) {
-        await supabase
-          .from('user_favorites' as any)
-          .delete()
-          .eq('user_id', user.id)
-          .eq('menu_item_id', itemId);
-
+        const updatedFavorites = favorites.filter((fav: any) => 
+          !(fav.itemId === itemId && fav.userId === user.id)
+        );
+        localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
         setIsFavorite(false);
         toast({
           title: "Removed from favorites",
           description: "Item removed from your favorites",
         });
       } else {
-        await supabase
-          .from('user_favorites' as any)
-          .insert({
-            user_id: user.id,
-            menu_item_id: itemId
-          });
-
+        const newFavorite = { itemId, userId: user.id, timestamp: Date.now() };
+        favorites.push(newFavorite);
+        localStorage.setItem('favorites', JSON.stringify(favorites));
         setIsFavorite(true);
         toast({
           title: "Added to favorites",

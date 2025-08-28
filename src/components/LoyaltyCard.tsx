@@ -31,45 +31,32 @@ const LoyaltyCard = ({ user }: LoyaltyCardProps) => {
     if (!user) return;
 
     try {
-      const { data } = await supabase
-        .from('loyalty_points' as any)
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      // For now, we'll use mock data since the table might not exist yet
+      // This can be updated once the database is properly set up
+      const mockData = {
+        points: 250,
+        total_earned: 1250,
+        user_id: user.id
+      };
 
-      if (data) {
-        const level = getLoyaltyLevel(data.total_earned || 0);
-        const nextReward = getNextRewardThreshold(data.total_earned || 0);
-        
-        setLoyaltyData({
-          points: data.points || 0,
-          totalEarned: data.total_earned || 0,
-          level: level.name,
-          nextReward
-        });
-      } else {
-        // Create initial loyalty record
-        const { data: newData } = await supabase
-          .from('loyalty_points' as any)
-          .insert({
-            user_id: user.id,
-            points: 0,
-            total_earned: 0
-          })
-          .select()
-          .single();
-
-        if (newData) {
-          setLoyaltyData({
-            points: 0,
-            totalEarned: 0,
-            level: "Bronze",
-            nextReward: 1000
-          });
-        }
-      }
+      const level = getLoyaltyLevel(mockData.total_earned);
+      const nextReward = getNextRewardThreshold(mockData.total_earned);
+      
+      setLoyaltyData({
+        points: mockData.points,
+        totalEarned: mockData.total_earned,
+        level: level.name,
+        nextReward
+      });
     } catch (error) {
       console.error('Error fetching loyalty data:', error);
+      // Set default values on error
+      setLoyaltyData({
+        points: 0,
+        totalEarned: 0,
+        level: "Bronze",
+        nextReward: 1000
+      });
     }
   };
 

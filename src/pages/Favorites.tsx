@@ -41,31 +41,45 @@ const Favorites = () => {
 
   const fetchFavorites = async (userId: string) => {
     try {
-      const { data } = await supabase
-        .from('user_favorites' as any)
-        .select(`
-          menu_items (
-            id,
-            name,
-            description,
-            price,
-            image_url,
-            rating,
-            is_spicy,
-            is_vegetarian,
-            prep_time
-          )
-        `)
-        .eq('user_id', userId);
+      // For now, we'll use localStorage to simulate favorites
+      const storedFavorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+      const userFavorites = storedFavorites.filter((fav: any) => fav.userId === userId);
+      
+      // Mock favorite items data
+      const mockFavoriteItems: FavoriteItem[] = [
+        {
+          id: "1",
+          name: "Beef Mishkaki",
+          description: "Grilled beef skewers marinated in traditional spices",
+          price: 12.99,
+          image_url: "/placeholder.svg",
+          rating: 4.8,
+          is_spicy: true,
+          is_vegetarian: false,
+          prep_time: 15
+        },
+        {
+          id: "2",
+          name: "Chicken Pilau",
+          description: "Aromatic rice dish with tender chicken and spices",
+          price: 14.99,
+          image_url: "/placeholder.svg",
+          rating: 4.7,
+          is_spicy: false,
+          is_vegetarian: false,
+          prep_time: 20
+        }
+      ];
 
-      if (data) {
-        const favoriteItems = data
-          .map((item: any) => item.menu_items)
-          .filter(Boolean) as FavoriteItem[];
-        setFavorites(favoriteItems);
-      }
+      // Filter mock items based on stored favorites
+      const filteredFavorites = mockFavoriteItems.filter(item => 
+        userFavorites.some((fav: any) => fav.itemId === item.id)
+      );
+
+      setFavorites(filteredFavorites);
     } catch (error) {
       console.error('Error fetching favorites:', error);
+      setFavorites([]);
     }
     setLoading(false);
   };
@@ -74,12 +88,11 @@ const Favorites = () => {
     if (!user) return;
 
     try {
-      await supabase
-        .from('user_favorites' as any)
-        .delete()
-        .eq('user_id', user.id)
-        .eq('menu_item_id', itemId);
-
+      const storedFavorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+      const updatedFavorites = storedFavorites.filter((fav: any) => 
+        !(fav.itemId === itemId && fav.userId === user.id)
+      );
+      localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
       setFavorites(favorites.filter(item => item.id !== itemId));
     } catch (error) {
       console.error('Error removing favorite:', error);
