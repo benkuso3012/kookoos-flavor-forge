@@ -53,7 +53,7 @@ const OrderTracking = () => {
 
     try {
       // Fetch order details
-      const { data: orderData, error: orderError } = await supabase
+      const { data: orderData, error: orderError } = await (supabase as any)
         .from('orders')
         .select('*')
         .eq('id', orderId)
@@ -62,7 +62,7 @@ const OrderTracking = () => {
       if (orderError) throw orderError;
 
       // Fetch order items
-      const { data: itemsData, error: itemsError } = await supabase
+      const { data: itemsData, error: itemsError } = await (supabase as any)
         .from('order_items')
         .select('*')
         .eq('order_id', orderId);
