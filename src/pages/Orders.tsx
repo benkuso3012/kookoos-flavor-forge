@@ -38,7 +38,7 @@ const Orders = () => {
   const fetchOrders = async () => {
     try {
       const { data, error } = await supabase
-        .from('orders')
+        .from('orders' as any)
         .select('*')
         .order('created_at', { ascending: false });
 

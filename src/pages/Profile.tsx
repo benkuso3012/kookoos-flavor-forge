@@ -43,7 +43,7 @@ const Profile = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('profiles' as any)
         .select('*')
         .eq('id', userId)
         .single();
@@ -75,8 +75,8 @@ const Profile = () => {
     };
 
     try {
-      const { error } = await supabase
-        .from('profiles')
+      const { error } = await (supabase
+        .from('profiles' as any) as any)
         .upsert(updatedProfile, { onConflict: 'id' });
 
       if (error) throw error;

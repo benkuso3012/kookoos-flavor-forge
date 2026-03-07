@@ -56,7 +56,7 @@ const Checkout = () => {
 
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
-      .from('profiles')
+      .from('profiles' as any)
       .select('*')
       .eq('id', userId)
       .single();
@@ -87,8 +87,8 @@ const Checkout = () => {
 
     try {
       // Create order
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
+      const { data: order, error: orderError } = await (supabase
+        .from('orders' as any) as any)
         .insert({
           user_id: user.id,
           total_amount: total,
@@ -104,14 +104,14 @@ const Checkout = () => {
 
       // Create order items
       const orderItems = cartItems.map(item => ({
-        order_id: order.id,
+        order_id: order!.id,
         item_name: item.name,
         item_price: item.price,
         quantity: item.quantity
       }));
 
-      const { error: itemsError } = await supabase
-        .from('order_items')
+      const { error: itemsError } = await (supabase
+        .from('order_items' as any) as any)
         .insert(orderItems);
 
       if (itemsError) throw itemsError;
@@ -122,7 +122,7 @@ const Checkout = () => {
       });
 
       // Navigate to order confirmation
-      navigate(`/orders/${order.id}`);
+      navigate(`/orders/${order!.id}`);
 
     } catch (error: any) {
       toast({
