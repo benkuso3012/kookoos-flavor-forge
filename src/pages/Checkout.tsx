@@ -87,8 +87,8 @@ const Checkout = () => {
 
     try {
       // Create order
-      const { data: order, error: orderError } = await (supabase
-        .from('orders' as any) as any)
+      const { data: order, error: orderError } = await (supabase as any)
+        .from('orders')
         .insert({
           user_id: user.id,
           total_amount: total,
@@ -110,8 +110,8 @@ const Checkout = () => {
         quantity: item.quantity
       }));
 
-      const { error: itemsError } = await (supabase
-        .from('order_items' as any) as any)
+      const { error: itemsError } = await (supabase as any)
+        .from('order_items')
         .insert(orderItems);
 
       if (itemsError) throw itemsError;

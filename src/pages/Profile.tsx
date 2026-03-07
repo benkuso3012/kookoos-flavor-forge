@@ -75,8 +75,8 @@ const Profile = () => {
     };
 
     try {
-      const { error } = await (supabase
-        .from('profiles' as any) as any)
+      const { error } = await (supabase as any)
+        .from('profiles')
         .upsert(updatedProfile, { onConflict: 'id' });
 
       if (error) throw error;
