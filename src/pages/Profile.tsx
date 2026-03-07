@@ -42,8 +42,8 @@ const Profile = () => {
   const fetchProfile = async (userId: string) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('profiles' as any)
+      const { data, error } = await (supabase as any)
+        .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();

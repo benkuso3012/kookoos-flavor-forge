@@ -55,8 +55,8 @@ const Checkout = () => {
   }, [navigate, cartItems.length]);
 
   const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles' as any)
+    const { data, error } = await (supabase as any)
+      .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
