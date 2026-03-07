@@ -10,108 +10,11 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.4"
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
-      order_items: {
-        Row: {
-          created_at: string
-          id: string
-          item_name: string
-          item_price: number
-          order_id: string
-          quantity: number
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          item_name: string
-          item_price: number
-          order_id: string
-          quantity?: number
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          item_name?: string
-          item_price?: number
-          order_id?: string
-          quantity?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "order_items_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      orders: {
-        Row: {
-          created_at: string
-          delivery_address: string | null
-          id: string
-          notes: string | null
-          phone: string | null
-          status: string
-          total_amount: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          delivery_address?: string | null
-          id?: string
-          notes?: string | null
-          phone?: string | null
-          status?: string
-          total_amount: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          delivery_address?: string | null
-          id?: string
-          notes?: string | null
-          phone?: string | null
-          status?: string
-          total_amount?: number
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      profiles: {
-        Row: {
-          address: string | null
-          created_at: string
-          full_name: string | null
-          id: string
-          phone: string | null
-          updated_at: string
-        }
-        Insert: {
-          address?: string | null
-          created_at?: string
-          full_name?: string | null
-          id: string
-          phone?: string | null
-          updated_at?: string
-        }
-        Update: {
-          address?: string | null
-          created_at?: string
-          full_name?: string | null
-          id?: string
-          phone?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
