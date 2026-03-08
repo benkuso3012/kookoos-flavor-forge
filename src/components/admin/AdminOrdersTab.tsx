@@ -43,6 +43,7 @@ export default function AdminOrdersTab({ orders, statusColor, updateOrderStatus 
   const [loadingItems, setLoadingItems] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const { printReceipt } = usePrintReceipt();
 
   const toggleExpand = async (orderId: string) => {
     if (expandedOrder === orderId) {
