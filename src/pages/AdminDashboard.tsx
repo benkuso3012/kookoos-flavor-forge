@@ -54,6 +54,7 @@ type DailyStats = {
 export default function AdminDashboard() {
   const { isAdmin, loading } = useAdminAuth();
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   const [stats, setStats] = useState<DailyStats>({ totalOrders: 0, totalRevenue: 0, pendingOrders: 0, avgOrderValue: 0, totalMenuItems: 0, totalCustomers: 0 });
   const [orders, setOrders] = useState<Order[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
