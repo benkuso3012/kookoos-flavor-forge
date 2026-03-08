@@ -76,9 +76,12 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState<MenuItem | null>(null);
+  const [storeModalOpen, setStoreModalOpen] = useState(false);
+  const [editStore, setEditStore] = useState<Store | null>(null);
 
   useEffect(() => {
     if (!loading && !isAdmin) {
