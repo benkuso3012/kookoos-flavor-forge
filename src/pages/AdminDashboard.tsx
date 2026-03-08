@@ -259,6 +259,7 @@ export default function AdminDashboard() {
           <TabsList className="bg-card border border-border">
             <TabsTrigger value="orders" className="gap-1.5"><ShoppingBag className="w-4 h-4" /> Orders</TabsTrigger>
             <TabsTrigger value="menu" className="gap-1.5"><UtensilsCrossed className="w-4 h-4" /> Menu</TabsTrigger>
+            <TabsTrigger value="stores" className="gap-1.5"><MapPin className="w-4 h-4" /> Stores</TabsTrigger>
             <TabsTrigger value="overview" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Analytics</TabsTrigger>
           </TabsList>
 
