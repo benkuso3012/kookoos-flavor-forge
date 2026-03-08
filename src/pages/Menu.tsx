@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from '@supabase/supabase-js';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { getMenuItemImage } from "@/lib/menuImages";
 
 type MenuItem = {
   id: string;
