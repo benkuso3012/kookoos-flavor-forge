@@ -5,8 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTheme } from 'next-themes';
 
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminOnboarding from '@/components/admin/AdminOnboarding';
