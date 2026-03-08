@@ -5,8 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTheme } from 'next-themes';
 
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminOnboarding from '@/components/admin/AdminOnboarding';
@@ -53,6 +54,7 @@ type DailyStats = {
 export default function AdminDashboard() {
   const { isAdmin, loading } = useAdminAuth();
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   const [stats, setStats] = useState<DailyStats>({ totalOrders: 0, totalRevenue: 0, pendingOrders: 0, avgOrderValue: 0, totalMenuItems: 0, totalCustomers: 0 });
   const [orders, setOrders] = useState<Order[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -74,6 +76,18 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (isAdmin) fetchAll();
+  }, [isAdmin]);
+
+  // Real-time subscription: auto-refresh when new orders come in (cashier payments)
+  useEffect(() => {
+    if (!isAdmin) return;
+    const channel = supabase
+      .channel('admin-orders-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+        fetchAll();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [isAdmin]);
 
   const fetchAll = useCallback(async () => {
@@ -188,6 +202,9 @@ export default function AdminDashboard() {
             </div>
             <div className="flex items-center gap-2">
               <AdminNotificationCenter />
+              <Button variant="ghost" size="sm" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </Button>
               <Button variant="ghost" size="sm" onClick={fetchAll} disabled={refreshing}>
                 <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
               </Button>

@@ -4,9 +4,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Package, AlertTriangle, Search, Save } from 'lucide-react';
+import { Package, AlertTriangle, Search, Save, Plus, Minus } from 'lucide-react';
 
 type InventoryItem = {
   id: string;
@@ -22,6 +24,8 @@ export default function AdminInventoryTab() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [edits, setEdits] = useState<Record<string, { stock_quantity?: number; low_stock_threshold?: number }>>({});
+  const [stockModal, setStockModal] = useState<{ item: InventoryItem; mode: 'add' | 'remove' } | null>(null);
+  const [stockAmount, setStockAmount] = useState(0);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -38,13 +42,11 @@ export default function AdminInventoryTab() {
       item_name: items.find((m: any) => m.id === i.menu_item_id)?.name || 'Unknown',
     }));
 
-    // Auto-create inventory records for items without one
     const existingIds = new Set(inv.map((i: InventoryItem) => i.menu_item_id));
     const missing = items.filter((m: any) => !existingIds.has(m.id));
     if (missing.length > 0) {
       const inserts = missing.map((m: any) => ({ menu_item_id: m.id, stock_quantity: 100, low_stock_threshold: 10 }));
       await (supabase as any).from('inventory').insert(inserts);
-      // Re-fetch
       const { data: newInv } = await (supabase as any).from('inventory').select('*');
       const newEnriched = (newInv || []).map((i: InventoryItem) => ({
         ...i,
@@ -71,6 +73,21 @@ export default function AdminInventoryTab() {
     toast.success(`Updated ${item.item_name}`);
     setInventory(prev => prev.map(i => i.id === item.id ? { ...i, ...changes } : i));
     setEdits(prev => { const n = { ...prev }; delete n[item.id]; return n; });
+  };
+
+  const handleStockAdjust = async () => {
+    if (!stockModal || stockAmount <= 0) return;
+    const { item, mode } = stockModal;
+    const newQty = mode === 'add'
+      ? item.stock_quantity + stockAmount
+      : Math.max(0, item.stock_quantity - stockAmount);
+
+    const { error } = await (supabase as any).from('inventory').update({ stock_quantity: newQty }).eq('id', item.id);
+    if (error) { toast.error('Failed to update stock'); return; }
+    toast.success(`${mode === 'add' ? 'Added' : 'Removed'} ${stockAmount} units ${mode === 'add' ? 'to' : 'from'} ${item.item_name}`);
+    setInventory(prev => prev.map(i => i.id === item.id ? { ...i, stock_quantity: newQty } : i));
+    setStockModal(null);
+    setStockAmount(0);
   };
 
   const filtered = inventory.filter(i =>
@@ -126,7 +143,7 @@ export default function AdminInventoryTab() {
                     <TableHead>Stock Qty</TableHead>
                     <TableHead>Low Stock Threshold</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Save</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -167,11 +184,31 @@ export default function AdminInventoryTab() {
                           )}
                         </TableCell>
                         <TableCell>
-                          {hasEdits && (
-                            <Button size="sm" variant="ghost" onClick={() => saveItem(item)}>
-                              <Save className="w-4 h-4" />
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 w-7 p-0 text-green-600 border-green-300 hover:bg-green-50 dark:hover:bg-green-950"
+                              onClick={() => { setStockModal({ item, mode: 'add' }); setStockAmount(0); }}
+                              title="Add Stock"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
                             </Button>
-                          )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 w-7 p-0 text-red-600 border-red-300 hover:bg-red-50 dark:hover:bg-red-950"
+                              onClick={() => { setStockModal({ item, mode: 'remove' }); setStockAmount(0); }}
+                              title="Remove Stock"
+                            >
+                              <Minus className="w-3.5 h-3.5" />
+                            </Button>
+                            {hasEdits && (
+                              <Button size="sm" variant="ghost" onClick={() => saveItem(item)} className="h-7 w-7 p-0">
+                                <Save className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -182,6 +219,63 @@ export default function AdminInventoryTab() {
           )}
         </CardContent>
       </Card>
+
+      {/* Stock Adjustment Modal */}
+      <Dialog open={!!stockModal} onOpenChange={(open) => { if (!open) setStockModal(null); }}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {stockModal?.mode === 'add' ? (
+                <Plus className="w-5 h-5 text-green-600" />
+              ) : (
+                <Minus className="w-5 h-5 text-red-600" />
+              )}
+              {stockModal?.mode === 'add' ? 'Add Stock' : 'Remove Stock'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              {stockModal?.mode === 'add' ? 'Adding stock to' : 'Removing stock from'}{' '}
+              <span className="font-semibold text-foreground">{stockModal?.item.item_name}</span>
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Current stock: <span className="font-semibold text-foreground">{stockModal?.item.stock_quantity}</span>
+            </p>
+            <div className="space-y-2">
+              <Label>Quantity</Label>
+              <Input
+                type="number"
+                min={1}
+                max={stockModal?.mode === 'remove' ? stockModal.item.stock_quantity : undefined}
+                value={stockAmount || ''}
+                onChange={e => setStockAmount(Number(e.target.value))}
+                placeholder="Enter amount..."
+                autoFocus
+              />
+            </div>
+            {stockAmount > 0 && stockModal && (
+              <p className="text-sm">
+                New stock will be:{' '}
+                <span className="font-bold">
+                  {stockModal.mode === 'add'
+                    ? stockModal.item.stock_quantity + stockAmount
+                    : Math.max(0, stockModal.item.stock_quantity - stockAmount)}
+                </span>
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStockModal(null)}>Cancel</Button>
+            <Button
+              onClick={handleStockAdjust}
+              disabled={stockAmount <= 0}
+              className={stockModal?.mode === 'add' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
+            >
+              {stockModal?.mode === 'add' ? 'Add Stock' : 'Remove Stock'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
