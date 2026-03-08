@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import {
   BarChart3, ShoppingBag, UtensilsCrossed, Users, MapPin, Tag,
   Settings, Shield, Activity, Package, LogOut, Home, HelpCircle,
-  FileSpreadsheet, Monitor, MessageSquare, Truck, UserCog, Gift, MapPinned, Bell,
+  FileSpreadsheet, Monitor, MessageSquare, Truck, UserCog, Gift, MapPinned, Bell, ChefHat,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { resetAdminOnboarding } from './AdminOnboarding';
