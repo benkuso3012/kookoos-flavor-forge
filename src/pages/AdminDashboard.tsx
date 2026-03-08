@@ -202,6 +202,9 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-secondary/30">
+      {/* Onboarding Tour */}
+      <AdminOnboarding onComplete={() => setShowOnboarding(false)} />
+
       {/* Real-time listener */}
       <OrderNotifications onNewOrder={fetchAll} />
 
