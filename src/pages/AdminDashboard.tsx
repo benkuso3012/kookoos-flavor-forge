@@ -7,13 +7,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BarChart3, ShoppingBag, UtensilsCrossed, Users, TrendingUp, Clock, DollarSign, LogOut, Home, RefreshCw, Plus, Pencil } from 'lucide-react';
+import { BarChart3, ShoppingBag, UtensilsCrossed, Users, TrendingUp, Clock, DollarSign, LogOut, Home, RefreshCw, Plus, Pencil, MapPin } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import RevenueChart from '@/components/admin/RevenueChart';
 import MenuItemModal from '@/components/admin/MenuItemModal';
 import OrderNotifications from '@/components/admin/OrderNotifications';
+import StoreModal from '@/components/admin/StoreModal';
 
 type Order = {
   id: string;
@@ -46,6 +48,18 @@ type MenuItem = {
 
 type Category = { id: string; name: string };
 
+type Store = {
+  id: string;
+  name: string;
+  address: string;
+  phone: string | null;
+  hours: string | null;
+  is_active: boolean;
+  is_flagship: boolean;
+  latitude: number | null;
+  longitude: number | null;
+};
+
 type DailyStats = {
   totalOrders: number;
   totalRevenue: number;
@@ -62,9 +76,12 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState<MenuItem | null>(null);
+  const [storeModalOpen, setStoreModalOpen] = useState(false);
+  const [editStore, setEditStore] = useState<Store | null>(null);
 
   useEffect(() => {
     if (!loading && !isAdmin) {
@@ -79,7 +96,7 @@ export default function AdminDashboard() {
 
   const fetchAll = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([fetchStats(), fetchOrders(), fetchMenuItems(), fetchCategories()]);
+    await Promise.all([fetchStats(), fetchOrders(), fetchMenuItems(), fetchCategories(), fetchStores()]);
     setRefreshing(false);
   }, []);
 
@@ -117,6 +134,18 @@ export default function AdminDashboard() {
   const fetchCategories = async () => {
     const { data } = await (supabase as any).from('menu_categories').select('id, name').order('sort_order');
     setCategories(data || []);
+  };
+
+  const fetchStores = async () => {
+    const { data } = await (supabase as any).from('stores').select('*').order('name');
+    setStores(data || []);
+  };
+
+  const toggleStoreActive = async (storeId: string, currentActive: boolean) => {
+    const { error } = await (supabase as any).from('stores').update({ is_active: !currentActive }).eq('id', storeId);
+    if (error) { toast.error('Failed to update store'); return; }
+    toast.success(`Store ${!currentActive ? 'activated' : 'deactivated'}`);
+    setStores(prev => prev.map(s => s.id === storeId ? { ...s, is_active: !currentActive } : s));
   };
 
   const updateOrderStatus = async (orderId: string, status: string) => {
@@ -230,6 +259,7 @@ export default function AdminDashboard() {
           <TabsList className="bg-card border border-border">
             <TabsTrigger value="orders" className="gap-1.5"><ShoppingBag className="w-4 h-4" /> Orders</TabsTrigger>
             <TabsTrigger value="menu" className="gap-1.5"><UtensilsCrossed className="w-4 h-4" /> Menu</TabsTrigger>
+            <TabsTrigger value="stores" className="gap-1.5"><MapPin className="w-4 h-4" /> Stores</TabsTrigger>
             <TabsTrigger value="overview" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Analytics</TabsTrigger>
           </TabsList>
 
@@ -418,6 +448,64 @@ export default function AdminDashboard() {
               </Card>
             </div>
           </TabsContent>
+
+          {/* Stores Tab */}
+          <TabsContent value="stores">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-foreground">Store Management</CardTitle>
+                  <CardDescription>Create, edit, and manage store locations</CardDescription>
+                </div>
+                <Button onClick={() => { setEditStore(null); setStoreModalOpen(true); }} className="gap-1.5">
+                  <Plus className="w-4 h-4" /> Add Store
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {stores.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">No stores yet</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Address</TableHead>
+                          <TableHead>Phone</TableHead>
+                          <TableHead>Hours</TableHead>
+                          <TableHead>Flagship</TableHead>
+                          <TableHead>Active</TableHead>
+                          <TableHead>Edit</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {stores.map(store => (
+                          <TableRow key={store.id} className={!store.is_active ? 'opacity-50' : ''}>
+                            <TableCell className="font-medium">{store.name}</TableCell>
+                            <TableCell className="text-sm max-w-[200px] truncate">{store.address}</TableCell>
+                            <TableCell className="text-sm">{store.phone || '—'}</TableCell>
+                            <TableCell className="text-sm">{store.hours || '—'}</TableCell>
+                            <TableCell>{store.is_flagship ? '⭐' : '—'}</TableCell>
+                            <TableCell>
+                              <Switch
+                                checked={store.is_active}
+                                onCheckedChange={() => toggleStoreActive(store.id, store.is_active)}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Button variant="ghost" size="sm" onClick={() => { setEditStore(store); setStoreModalOpen(true); }}>
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </main>
 
@@ -428,6 +516,12 @@ export default function AdminDashboard() {
         item={editItem}
         onSaved={() => { fetchMenuItems(); fetchStats(); }}
         categories={categories}
+      />
+      <StoreModal
+        open={storeModalOpen}
+        onClose={() => setStoreModalOpen(false)}
+        store={editStore}
+        onSaved={fetchStores}
       />
     </div>
   );
