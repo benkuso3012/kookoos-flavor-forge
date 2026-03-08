@@ -16,6 +16,7 @@ import RevenueChart from '@/components/admin/RevenueChart';
 import MenuItemModal from '@/components/admin/MenuItemModal';
 import OrderNotifications from '@/components/admin/OrderNotifications';
 import StoreModal from '@/components/admin/StoreModal';
+import AdminOnboarding, { resetAdminOnboarding } from '@/components/admin/AdminOnboarding';
 
 type Order = {
   id: string;
