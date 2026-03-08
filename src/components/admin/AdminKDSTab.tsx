@@ -101,6 +101,32 @@ export default function AdminKDSTab() {
 
   useEffect(() => { fetchOrders(); fetchMenuPrepTimes(); }, [fetchOrders, fetchMenuPrepTimes]);
 
+  // Detect new orders and play sound
+  useEffect(() => {
+    const currentIds = new Set(orders.filter(o => o.status === 'pending').map(o => o.id));
+    const prevIds = prevOrderIdsRef.current;
+    if (soundEnabled && prevIds.size > 0) {
+      const newOrders = [...currentIds].filter(id => !prevIds.has(id));
+      if (newOrders.length > 0) {
+        playAlert('newOrder');
+      }
+    }
+    prevOrderIdsRef.current = currentIds;
+  }, [orders, soundEnabled]);
+
+  // Urgent order alert (every 30s check for overdue orders)
+  useEffect(() => {
+    if (!soundEnabled) return;
+    const interval = setInterval(() => {
+      const hasUrgent = orders.some(o => {
+        const elapsed = differenceInMinutes(new Date(), new Date(o.created_at));
+        return o.status !== 'ready' && elapsed > 15;
+      });
+      if (hasUrgent) playAlert('urgent');
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [orders, soundEnabled]);
+
   useEffect(() => {
     const channel = supabase
       .channel('kds-orders')
