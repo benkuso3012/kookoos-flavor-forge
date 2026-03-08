@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BarChart3, ShoppingBag, UtensilsCrossed, Users, TrendingUp, Clock, DollarSign, LogOut, Home, RefreshCw, Plus, Pencil, MapPin } from 'lucide-react';
+import { BarChart3, ShoppingBag, UtensilsCrossed, Users, TrendingUp, Clock, DollarSign, LogOut, Home, RefreshCw, Plus, Pencil, MapPin, HelpCircle } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
@@ -16,6 +16,7 @@ import RevenueChart from '@/components/admin/RevenueChart';
 import MenuItemModal from '@/components/admin/MenuItemModal';
 import OrderNotifications from '@/components/admin/OrderNotifications';
 import StoreModal from '@/components/admin/StoreModal';
+import AdminOnboarding, { resetAdminOnboarding } from '@/components/admin/AdminOnboarding';
 
 type Order = {
   id: string;
@@ -82,6 +83,7 @@ export default function AdminDashboard() {
   const [editItem, setEditItem] = useState<MenuItem | null>(null);
   const [storeModalOpen, setStoreModalOpen] = useState(false);
   const [editStore, setEditStore] = useState<Store | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     if (!loading && !isAdmin) {
@@ -200,6 +202,9 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-secondary/30">
+      {/* Onboarding Tour */}
+      <AdminOnboarding onComplete={() => setShowOnboarding(false)} />
+
       {/* Real-time listener */}
       <OrderNotifications onNewOrder={fetchAll} />
 
@@ -216,6 +221,9 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => { resetAdminOnboarding(); setShowOnboarding(true); window.location.reload(); }} title="Restart tour">
+              <HelpCircle className="w-4 h-4" />
+            </Button>
             <Button variant="ghost" size="sm" onClick={fetchAll} disabled={refreshing}>
               <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             </Button>
