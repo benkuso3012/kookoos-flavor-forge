@@ -22,6 +22,13 @@ import AdminRolesTab from '@/components/admin/AdminRolesTab';
 import AdminInventoryTab from '@/components/admin/AdminInventoryTab';
 import AdminSettingsTab from '@/components/admin/AdminSettingsTab';
 import AdminAuditTab from '@/components/admin/AdminAuditTab';
+import AdminReportsTab from '@/components/admin/AdminReportsTab';
+import AdminPOSTab from '@/components/admin/AdminPOSTab';
+import AdminCommsTab from '@/components/admin/AdminCommsTab';
+import AdminStaffTab from '@/components/admin/AdminStaffTab';
+import AdminSuppliersTab from '@/components/admin/AdminSuppliersTab';
+import AdminPromotionsTab from '@/components/admin/AdminPromotionsTab';
+import AdminDeliveryZonesTab from '@/components/admin/AdminDeliveryZonesTab';
 import MenuItemModal from '@/components/admin/MenuItemModal';
 import StoreModal from '@/components/admin/StoreModal';
 
@@ -180,9 +187,11 @@ export default function AdminDashboard() {
   if (!isAdmin) return null;
 
   const tabTitles: Record<string, string> = {
-    overview: 'Overview', orders: 'Orders', menu: 'Menu Items',
+    overview: 'Overview', orders: 'Orders', pos: 'POS Cashier', menu: 'Menu Items',
     inventory: 'Inventory', specials: 'Daily Specials', stores: 'Stores',
-    customers: 'Customers', roles: 'Role Management', settings: 'Settings', audit: 'Activity Log',
+    customers: 'Customers', staff: 'Staff', comms: 'Communications',
+    promotions: 'Promotions', suppliers: 'Suppliers', 'delivery-zones': 'Delivery Zones',
+    reports: 'Reports & Export', roles: 'Role Management', settings: 'Settings', audit: 'Activity Log',
   };
 
   return (
@@ -297,6 +306,13 @@ export default function AdminDashboard() {
               </div>
             )}
             {activeTab === 'customers' && <AdminCustomersTab />}
+            {activeTab === 'pos' && <AdminPOSTab />}
+            {activeTab === 'staff' && <AdminStaffTab />}
+            {activeTab === 'comms' && <AdminCommsTab orders={orders} />}
+            {activeTab === 'promotions' && <AdminPromotionsTab />}
+            {activeTab === 'suppliers' && <AdminSuppliersTab />}
+            {activeTab === 'delivery-zones' && <AdminDeliveryZonesTab />}
+            {activeTab === 'reports' && <AdminReportsTab orders={orders} />}
             {activeTab === 'roles' && <AdminRolesTab />}
             {activeTab === 'settings' && <AdminSettingsTab />}
             {activeTab === 'audit' && <AdminAuditTab />}
