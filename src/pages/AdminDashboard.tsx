@@ -190,6 +190,9 @@ export default function AdminDashboard() {
             </div>
             <div className="flex items-center gap-2">
               <AdminNotificationCenter />
+              <Button variant="ghost" size="sm" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </Button>
               <Button variant="ghost" size="sm" onClick={fetchAll} disabled={refreshing}>
                 <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
               </Button>
