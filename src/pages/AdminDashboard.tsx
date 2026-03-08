@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import RevenueChart from '@/components/admin/RevenueChart';
 import MenuItemModal from '@/components/admin/MenuItemModal';
 import OrderNotifications from '@/components/admin/OrderNotifications';
+import StoreModal from '@/components/admin/StoreModal';
 
 type Order = {
   id: string;
