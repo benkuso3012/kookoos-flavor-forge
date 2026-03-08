@@ -517,6 +517,12 @@ export default function AdminDashboard() {
         onSaved={() => { fetchMenuItems(); fetchStats(); }}
         categories={categories}
       />
+      <StoreModal
+        open={storeModalOpen}
+        onClose={() => setStoreModalOpen(false)}
+        store={editStore}
+        onSaved={fetchStores}
+      />
     </div>
   );
 }
