@@ -15,19 +15,33 @@ import {
 import { Button } from '@/components/ui/button';
 import {
   BarChart3, ShoppingBag, UtensilsCrossed, Users, MapPin, Tag,
-  Settings, Shield, Activity, Package, Bell, LogOut, Home, HelpCircle,
+  Settings, Shield, Activity, Package, LogOut, Home, HelpCircle,
+  FileSpreadsheet, Monitor, MessageSquare, Truck, UserCog, Gift, MapPinned, Bell,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { resetAdminOnboarding } from './AdminOnboarding';
 
-const navItems = [
+const dashboardItems = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
   { id: 'orders', label: 'Orders', icon: ShoppingBag },
+  { id: 'pos', label: 'POS Cashier', icon: Monitor },
   { id: 'menu', label: 'Menu Items', icon: UtensilsCrossed },
   { id: 'inventory', label: 'Inventory', icon: Package },
   { id: 'specials', label: 'Daily Specials', icon: Tag },
   { id: 'stores', label: 'Stores', icon: MapPin },
+];
+
+const managementItems = [
   { id: 'customers', label: 'Customers', icon: Users },
+  { id: 'staff', label: 'Staff', icon: UserCog },
+  { id: 'comms', label: 'Communications', icon: MessageSquare },
+  { id: 'promotions', label: 'Promotions', icon: Gift },
+  { id: 'suppliers', label: 'Suppliers', icon: Truck },
+  { id: 'delivery-zones', label: 'Delivery Zones', icon: MapPinned },
+];
+
+const systemItems = [
+  { id: 'reports', label: 'Reports & Export', icon: FileSpreadsheet },
   { id: 'roles', label: 'Role Management', icon: Shield },
   { id: 'settings', label: 'Settings', icon: Settings },
   { id: 'audit', label: 'Activity Log', icon: Activity },
@@ -49,6 +63,34 @@ export default function AdminSidebar({ activeTab, onTabChange, pendingOrders = 0
     navigate('/');
   };
 
+  const renderGroup = (label: string, items: typeof dashboardItems) => (
+    <SidebarGroup>
+      <SidebarGroupLabel>{label}</SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {items.map((item) => (
+            <SidebarMenuItem key={item.id}>
+              <SidebarMenuButton
+                onClick={() => onTabChange(item.id)}
+                isActive={activeTab === item.id}
+                tooltip={item.label}
+                className="cursor-pointer"
+              >
+                <item.icon className="w-4 h-4" />
+                <span>{item.label}</span>
+                {item.id === 'orders' && pendingOrders > 0 && (
+                  <span className="ml-auto bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    {pendingOrders}
+                  </span>
+                )}
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
+
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
       <SidebarHeader className="p-4">
@@ -66,52 +108,9 @@ export default function AdminSidebar({ activeTab, onTabChange, pendingOrders = 0
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Dashboard</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navItems.slice(0, 6).map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    onClick={() => onTabChange(item.id)}
-                    isActive={activeTab === item.id}
-                    tooltip={item.label}
-                    className="cursor-pointer"
-                  >
-                    <item.icon className="w-4 h-4" />
-                    <span>{item.label}</span>
-                    {item.id === 'orders' && pendingOrders > 0 && (
-                      <span className="ml-auto bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                        {pendingOrders}
-                      </span>
-                    )}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Management</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navItems.slice(6).map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    onClick={() => onTabChange(item.id)}
-                    isActive={activeTab === item.id}
-                    tooltip={item.label}
-                    className="cursor-pointer"
-                  >
-                    <item.icon className="w-4 h-4" />
-                    <span>{item.label}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {renderGroup('Dashboard', dashboardItems)}
+        {renderGroup('Management', managementItems)}
+        {renderGroup('System', systemItems)}
       </SidebarContent>
 
       <SidebarFooter className="p-2">
