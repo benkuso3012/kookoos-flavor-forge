@@ -1,18 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BarChart3, ShoppingBag, UtensilsCrossed, MapPin, Users, TrendingUp, Clock, DollarSign, LogOut, Home, RefreshCw } from 'lucide-react';
+import { BarChart3, ShoppingBag, UtensilsCrossed, Users, TrendingUp, Clock, DollarSign, LogOut, Home, RefreshCw, Plus, Pencil } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import RevenueChart from '@/components/admin/RevenueChart';
+import MenuItemModal from '@/components/admin/MenuItemModal';
+import OrderNotifications from '@/components/admin/OrderNotifications';
 
 type Order = {
   id: string;
@@ -32,10 +33,18 @@ type MenuItem = {
   category_id: string | null;
   is_available: boolean;
   is_featured: boolean;
+  is_spicy: boolean;
+  is_vegetarian: boolean;
+  is_vegan: boolean;
+  is_gluten_free: boolean;
+  calories: number | null;
   rating: number;
   prep_time: number;
   description: string | null;
+  image_url: string | null;
 };
+
+type Category = { id: string; name: string };
 
 type DailyStats = {
   totalOrders: number;
@@ -52,7 +61,10 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<DailyStats>({ totalOrders: 0, totalRevenue: 0, pendingOrders: 0, avgOrderValue: 0, totalMenuItems: 0, totalCustomers: 0 });
   const [orders, setOrders] = useState<Order[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editItem, setEditItem] = useState<MenuItem | null>(null);
 
   useEffect(() => {
     if (!loading && !isAdmin) {
@@ -65,26 +77,23 @@ export default function AdminDashboard() {
     if (isAdmin) fetchAll();
   }, [isAdmin]);
 
-  const fetchAll = async () => {
+  const fetchAll = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([fetchStats(), fetchOrders(), fetchMenuItems()]);
+    await Promise.all([fetchStats(), fetchOrders(), fetchMenuItems(), fetchCategories()]);
     setRefreshing(false);
-  };
+  }, []);
 
   const fetchStats = async () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
     const [ordersRes, menuRes, profilesRes] = await Promise.all([
       (supabase as any).from('orders').select('*'),
       (supabase as any).from('menu_items').select('id', { count: 'exact', head: true }),
       (supabase as any).from('profiles').select('id', { count: 'exact', head: true }),
     ]);
-
     const allOrders: Order[] = ordersRes.data || [];
     const todayOrders = allOrders.filter(o => new Date(o.created_at) >= today);
     const totalRevenue = todayOrders.reduce((s, o) => s + Number(o.total_amount), 0);
-
     setStats({
       totalOrders: todayOrders.length,
       totalRevenue,
@@ -103,6 +112,11 @@ export default function AdminDashboard() {
   const fetchMenuItems = async () => {
     const { data } = await (supabase as any).from('menu_items').select('*').order('name');
     setMenuItems(data || []);
+  };
+
+  const fetchCategories = async () => {
+    const { data } = await (supabase as any).from('menu_categories').select('id, name').order('sort_order');
+    setCategories(data || []);
   };
 
   const updateOrderStatus = async (orderId: string, status: string) => {
@@ -131,6 +145,9 @@ export default function AdminDashboard() {
     navigate('/');
   };
 
+  const openCreate = () => { setEditItem(null); setModalOpen(true); };
+  const openEdit = (item: MenuItem) => { setEditItem(item); setModalOpen(true); };
+
   const statusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
@@ -154,6 +171,9 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-secondary/30">
+      {/* Real-time listener */}
+      <OrderNotifications onNewOrder={fetchAll} />
+
       {/* Top Nav */}
       <header className="bg-card border-b border-border sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
@@ -210,7 +230,7 @@ export default function AdminDashboard() {
           <TabsList className="bg-card border border-border">
             <TabsTrigger value="orders" className="gap-1.5"><ShoppingBag className="w-4 h-4" /> Orders</TabsTrigger>
             <TabsTrigger value="menu" className="gap-1.5"><UtensilsCrossed className="w-4 h-4" /> Menu</TabsTrigger>
-            <TabsTrigger value="overview" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Overview</TabsTrigger>
+            <TabsTrigger value="overview" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Analytics</TabsTrigger>
           </TabsList>
 
           {/* Orders Tab */}
@@ -218,7 +238,7 @@ export default function AdminDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-foreground">Recent Orders</CardTitle>
-                <CardDescription>Manage and track all incoming orders</CardDescription>
+                <CardDescription>Manage and track all incoming orders — new orders appear in real-time</CardDescription>
               </CardHeader>
               <CardContent>
                 {orders.length === 0 ? (
@@ -277,9 +297,14 @@ export default function AdminDashboard() {
           {/* Menu Tab */}
           <TabsContent value="menu">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-foreground">Menu Management</CardTitle>
-                <CardDescription>Toggle availability and featured status</CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-foreground">Menu Management</CardTitle>
+                  <CardDescription>Create, edit, and manage menu items</CardDescription>
+                </div>
+                <Button onClick={openCreate} className="gap-1.5">
+                  <Plus className="w-4 h-4" /> Add Item
+                </Button>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
@@ -292,6 +317,7 @@ export default function AdminDashboard() {
                         <TableHead>Prep Time</TableHead>
                         <TableHead>Available</TableHead>
                         <TableHead>Featured</TableHead>
+                        <TableHead>Edit</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -321,6 +347,11 @@ export default function AdminDashboard() {
                               {item.is_featured ? '⭐ Featured' : 'Set Featured'}
                             </Button>
                           </TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="sm" onClick={() => openEdit(item)}>
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -330,9 +361,11 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Overview Tab */}
+          {/* Analytics/Overview Tab */}
           <TabsContent value="overview">
             <div className="grid md:grid-cols-2 gap-4">
+              <RevenueChart orders={orders} />
+
               <Card>
                 <CardHeader>
                   <CardTitle className="text-foreground">Orders by Status</CardTitle>
@@ -361,7 +394,7 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="md:col-span-2">
                 <CardHeader>
                   <CardTitle className="text-foreground">Recent Activity</CardTitle>
                 </CardHeader>
@@ -387,6 +420,15 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Menu Item Modal */}
+      <MenuItemModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        item={editItem}
+        onSaved={() => { fetchMenuItems(); fetchStats(); }}
+        categories={categories}
+      />
     </div>
   );
 }
