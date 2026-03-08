@@ -22,6 +22,13 @@ import AdminRolesTab from '@/components/admin/AdminRolesTab';
 import AdminInventoryTab from '@/components/admin/AdminInventoryTab';
 import AdminSettingsTab from '@/components/admin/AdminSettingsTab';
 import AdminAuditTab from '@/components/admin/AdminAuditTab';
+import AdminReportsTab from '@/components/admin/AdminReportsTab';
+import AdminPOSTab from '@/components/admin/AdminPOSTab';
+import AdminCommsTab from '@/components/admin/AdminCommsTab';
+import AdminStaffTab from '@/components/admin/AdminStaffTab';
+import AdminSuppliersTab from '@/components/admin/AdminSuppliersTab';
+import AdminPromotionsTab from '@/components/admin/AdminPromotionsTab';
+import AdminDeliveryZonesTab from '@/components/admin/AdminDeliveryZonesTab';
 import MenuItemModal from '@/components/admin/MenuItemModal';
 import StoreModal from '@/components/admin/StoreModal';
 
