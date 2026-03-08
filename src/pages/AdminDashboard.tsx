@@ -96,7 +96,7 @@ export default function AdminDashboard() {
 
   const fetchAll = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([fetchStats(), fetchOrders(), fetchMenuItems(), fetchCategories()]);
+    await Promise.all([fetchStats(), fetchOrders(), fetchMenuItems(), fetchCategories(), fetchStores()]);
     setRefreshing(false);
   }, []);
 
