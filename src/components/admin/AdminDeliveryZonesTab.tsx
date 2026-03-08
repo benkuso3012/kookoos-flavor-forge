@@ -139,10 +139,10 @@ export default function AdminDeliveryZonesTab() {
             <div><Label>Zone Name *</Label><Input placeholder="e.g. Bahari Beach Area" value={form.zone_name} onChange={e => setForm(f => ({ ...f, zone_name: e.target.value }))} /></div>
             <div>
               <Label>Store</Label>
-              <Select value={form.store_id} onValueChange={v => setForm(f => ({ ...f, store_id: v }))}>
+              <Select value={form.store_id || '__all__'} onValueChange={v => setForm(f => ({ ...f, store_id: v === '__all__' ? '' : v }))}>
                 <SelectTrigger><SelectValue placeholder="All Stores" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Stores</SelectItem>
+                  <SelectItem value="__all__">All Stores</SelectItem>
                   {stores.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                 </SelectContent>
               </Select>
