@@ -187,9 +187,11 @@ export default function AdminDashboard() {
   if (!isAdmin) return null;
 
   const tabTitles: Record<string, string> = {
-    overview: 'Overview', orders: 'Orders', menu: 'Menu Items',
+    overview: 'Overview', orders: 'Orders', pos: 'POS Cashier', menu: 'Menu Items',
     inventory: 'Inventory', specials: 'Daily Specials', stores: 'Stores',
-    customers: 'Customers', roles: 'Role Management', settings: 'Settings', audit: 'Activity Log',
+    customers: 'Customers', staff: 'Staff', comms: 'Communications',
+    promotions: 'Promotions', suppliers: 'Suppliers', 'delivery-zones': 'Delivery Zones',
+    reports: 'Reports & Export', roles: 'Role Management', settings: 'Settings', audit: 'Activity Log',
   };
 
   return (
