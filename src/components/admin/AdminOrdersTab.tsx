@@ -8,9 +8,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, differenceInMinutes } from 'date-fns';
-import { ChevronDown, ChevronUp, Phone, MapPin, StickyNote, Package, Filter, Search } from 'lucide-react';
+import { ChevronDown, ChevronUp, Phone, MapPin, StickyNote, Package, Filter, Search, Printer } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { usePrintReceipt } from './ReceiptPrinter';
 
 type Order = {
   id: string;
