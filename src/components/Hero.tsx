@@ -91,22 +91,6 @@ const Hero = () => {
         </div>
       </motion.div>
 
-      <motion.div
-        className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white"
-        animate={{ y: [0, 10, 0] }}
-        transition={{ repeat: Infinity, duration: 2 }}
-      >
-        <div className="flex flex-col items-center gap-2">
-          <span className="text-sm font-medium">Scroll to Explore</span>
-          <div className="w-6 h-10 border-2 border-white rounded-full flex justify-center">
-            <motion.div
-              className="w-1 h-3 bg-white rounded-full mt-2"
-              animate={{ opacity: [1, 0.3, 1] }}
-              transition={{ repeat: Infinity, duration: 1.5 }}
-            />
-          </div>
-        </div>
-      </motion.div>
     </section>
   );
 };
