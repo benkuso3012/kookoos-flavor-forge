@@ -3,20 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BarChart3, ShoppingBag, UtensilsCrossed, Users, TrendingUp, Clock, DollarSign, LogOut, Home, RefreshCw, Plus, Pencil, MapPin, HelpCircle } from 'lucide-react';
+import { BarChart3, ShoppingBag, UtensilsCrossed, Users, TrendingUp, Clock, DollarSign, LogOut, Home, RefreshCw, Plus, Pencil, MapPin, HelpCircle, Tag } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { motion } from 'framer-motion';
-import { format } from 'date-fns';
 import { toast } from 'sonner';
-import RevenueChart from '@/components/admin/RevenueChart';
 import MenuItemModal from '@/components/admin/MenuItemModal';
 import OrderNotifications from '@/components/admin/OrderNotifications';
 import StoreModal from '@/components/admin/StoreModal';
 import AdminOnboarding, { resetAdminOnboarding } from '@/components/admin/AdminOnboarding';
+import AdminOverviewTab from '@/components/admin/AdminOverviewTab';
+import AdminOrdersTab from '@/components/admin/AdminOrdersTab';
+import AdminDailySpecialsTab from '@/components/admin/AdminDailySpecialsTab';
 
 type Order = {
   id: string;
@@ -83,7 +83,7 @@ export default function AdminDashboard() {
   const [editItem, setEditItem] = useState<MenuItem | null>(null);
   const [storeModalOpen, setStoreModalOpen] = useState(false);
   const [editStore, setEditStore] = useState<Store | null>(null);
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     if (!loading && !isAdmin) {
@@ -202,10 +202,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-secondary/30">
-      {/* Onboarding Tour */}
-      <AdminOnboarding onComplete={() => setShowOnboarding(false)} />
-
-      {/* Real-time listener */}
+      <AdminOnboarding onComplete={() => {}} />
       <OrderNotifications onNewOrder={fetchAll} />
 
       {/* Top Nav */}
@@ -221,7 +218,7 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => { resetAdminOnboarding(); setShowOnboarding(true); window.location.reload(); }} title="Restart tour">
+            <Button variant="ghost" size="sm" onClick={() => { resetAdminOnboarding(); window.location.reload(); }} title="Restart tour">
               <HelpCircle className="w-4 h-4" />
             </Button>
             <Button variant="ghost" size="sm" onClick={fetchAll} disabled={refreshing}>
@@ -263,73 +260,34 @@ export default function AdminDashboard() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="orders" className="space-y-4">
-          <TabsList className="bg-card border border-border">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList className="bg-card border border-border flex-wrap h-auto gap-1 p-1">
+            <TabsTrigger value="overview" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Overview</TabsTrigger>
             <TabsTrigger value="orders" className="gap-1.5"><ShoppingBag className="w-4 h-4" /> Orders</TabsTrigger>
             <TabsTrigger value="menu" className="gap-1.5"><UtensilsCrossed className="w-4 h-4" /> Menu</TabsTrigger>
+            <TabsTrigger value="specials" className="gap-1.5"><Tag className="w-4 h-4" /> Specials</TabsTrigger>
             <TabsTrigger value="stores" className="gap-1.5"><MapPin className="w-4 h-4" /> Stores</TabsTrigger>
-            <TabsTrigger value="overview" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Analytics</TabsTrigger>
           </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview">
+            <AdminOverviewTab
+              stats={stats}
+              orders={orders}
+              menuItems={menuItems}
+              stores={stores}
+              statusColor={statusColor}
+              onNavigateTab={setActiveTab}
+            />
+          </TabsContent>
 
           {/* Orders Tab */}
           <TabsContent value="orders">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-foreground">Recent Orders</CardTitle>
-                <CardDescription>Manage and track all incoming orders — new orders appear in real-time</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {orders.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">No orders yet</p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Order ID</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Amount</TableHead>
-                          <TableHead>Address</TableHead>
-                          <TableHead>Phone</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {orders.map(order => (
-                          <TableRow key={order.id}>
-                            <TableCell className="font-mono text-xs">{order.id.slice(0, 8)}…</TableCell>
-                            <TableCell className="text-sm">{format(new Date(order.created_at), 'MMM d, HH:mm')}</TableCell>
-                            <TableCell className="font-semibold">TSh {Number(order.total_amount).toLocaleString()}</TableCell>
-                            <TableCell className="text-sm max-w-[150px] truncate">{order.delivery_address}</TableCell>
-                            <TableCell className="text-sm">{order.phone}</TableCell>
-                            <TableCell>
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium border ${statusColor(order.status)}`}>
-                                {order.status}
-                              </span>
-                            </TableCell>
-                            <TableCell>
-                              <Select value={order.status} onValueChange={(v) => updateOrderStatus(order.id, v)}>
-                                <SelectTrigger className="w-[130px] h-8 text-xs">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="pending">Pending</SelectItem>
-                                  <SelectItem value="preparing">Preparing</SelectItem>
-                                  <SelectItem value="ready">Ready</SelectItem>
-                                  <SelectItem value="delivered">Delivered</SelectItem>
-                                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <AdminOrdersTab
+              orders={orders}
+              statusColor={statusColor}
+              updateOrderStatus={updateOrderStatus}
+            />
           </TabsContent>
 
           {/* Menu Tab */}
@@ -338,7 +296,7 @@ export default function AdminDashboard() {
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="text-foreground">Menu Management</CardTitle>
-                  <CardDescription>Create, edit, and manage menu items</CardDescription>
+                  <CardDescription>Create, edit, and manage menu items — {menuItems.length} items total</CardDescription>
                 </div>
                 <Button onClick={openCreate} className="gap-1.5">
                   <Plus className="w-4 h-4" /> Add Item
@@ -399,62 +357,9 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Analytics/Overview Tab */}
-          <TabsContent value="overview">
-            <div className="grid md:grid-cols-2 gap-4">
-              <RevenueChart orders={orders} />
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-foreground">Orders by Status</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {['pending', 'preparing', 'ready', 'delivered', 'cancelled'].map(status => {
-                    const count = orders.filter(o => o.status === status).length;
-                    const pct = orders.length ? (count / orders.length) * 100 : 0;
-                    return (
-                      <div key={status} className="mb-3">
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="capitalize text-foreground">{status}</span>
-                          <span className="text-muted-foreground">{count}</span>
-                        </div>
-                        <div className="h-2 bg-muted rounded-full overflow-hidden">
-                          <motion.div
-                            className="h-full bg-primary rounded-full"
-                            initial={{ width: 0 }}
-                            animate={{ width: `${pct}%` }}
-                            transition={{ duration: 0.6 }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </CardContent>
-              </Card>
-
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle className="text-foreground">Recent Activity</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {orders.slice(0, 8).map(order => (
-                      <div key={order.id} className="flex items-center justify-between text-sm border-b border-border pb-2 last:border-0">
-                        <div>
-                          <span className="font-medium text-foreground">#{order.id.slice(0, 6)}</span>
-                          <span className="text-muted-foreground ml-2">{format(new Date(order.created_at), 'HH:mm')}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-foreground">TSh {Number(order.total_amount).toLocaleString()}</span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs border ${statusColor(order.status)}`}>{order.status}</span>
-                        </div>
-                      </div>
-                    ))}
-                    {orders.length === 0 && <p className="text-center text-muted-foreground">No recent activity</p>}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+          {/* Daily Specials Tab */}
+          <TabsContent value="specials">
+            <AdminDailySpecialsTab />
           </TabsContent>
 
           {/* Stores Tab */}
@@ -463,7 +368,7 @@ export default function AdminDashboard() {
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="text-foreground">Store Management</CardTitle>
-                  <CardDescription>Create, edit, and manage store locations</CardDescription>
+                  <CardDescription>Create, edit, and manage store locations — {stores.length} locations</CardDescription>
                 </div>
                 <Button onClick={() => { setEditStore(null); setStoreModalOpen(true); }} className="gap-1.5">
                   <Plus className="w-4 h-4" /> Add Store
@@ -517,7 +422,6 @@ export default function AdminDashboard() {
         </Tabs>
       </main>
 
-      {/* Menu Item Modal */}
       <MenuItemModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
