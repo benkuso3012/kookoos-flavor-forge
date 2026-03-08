@@ -1,11 +1,46 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, differenceInMinutes, differenceInSeconds } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, CheckCircle2, ChefHat, Bell, Maximize2, Minimize2, RefreshCw, Timer, TrendingUp, BarChart3, Gauge } from 'lucide-react';
+import { Clock, CheckCircle2, ChefHat, Bell, Maximize2, Minimize2, RefreshCw, Timer, TrendingUp, BarChart3, Gauge, Volume2, VolumeX } from 'lucide-react';
 import { toast } from 'sonner';
+
+// Web Audio API beep generator
+function playAlert(type: 'newOrder' | 'urgent' = 'newOrder') {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    if (type === 'newOrder') {
+      // Two-tone chime: C5 → E5
+      [523.25, 659.25].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.3, ctx.currentTime + i * 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.15 + 0.3);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(ctx.currentTime + i * 0.15);
+        osc.stop(ctx.currentTime + i * 0.15 + 0.3);
+      });
+    } else {
+      // Urgent: three rapid beeps
+      [0, 0.2, 0.4].forEach(delay => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.2, ctx.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.12);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(ctx.currentTime + delay);
+        osc.stop(ctx.currentTime + delay + 0.12);
+      });
+    }
+    setTimeout(() => ctx.close(), 2000);
+  } catch { /* Audio not supported */ }
+}
 
 type Order = {
   id: string; status: string; total_amount: number;
