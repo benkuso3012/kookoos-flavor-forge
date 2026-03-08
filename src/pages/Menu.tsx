@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from '@supabase/supabase-js';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { getMenuItemImage } from "@/lib/menuImages";
 
 type MenuItem = {
   id: string;
@@ -187,7 +188,7 @@ const Menu = () => {
                     >
                       <div className="relative overflow-hidden">
                         <img 
-                          src={item.image_url || '/placeholder.svg'} 
+                          src={getMenuItemImage(item.name, item.image_url)} 
                           alt={item.name}
                           className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
                         />

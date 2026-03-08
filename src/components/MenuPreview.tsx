@@ -6,11 +6,7 @@ import { ArrowRight, Star } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import bombaBox from "@/assets/bomba-box.jpg";
-import chickenCombo from "@/assets/chicken-combo.jpg";
-import crispyChicken from "@/assets/crispy-chicken.jpg";
-
-const fallbackImages = [bombaBox, chickenCombo, crispyChicken];
+import { getMenuItemImage } from "@/lib/menuImages";
 
 interface FeaturedItem {
   id: string;
@@ -99,7 +95,7 @@ const MenuPreview = () => {
               <Card className="group hover:shadow-glow transition-all duration-300 hover:-translate-y-2 border-0 shadow-card overflow-hidden">
                 <div className="relative overflow-hidden">
                   <img
-                    src={item.image_url || fallbackImages[i % fallbackImages.length]}
+                    src={getMenuItemImage(item.name, item.image_url)}
                     alt={item.name}
                     className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
                   />
