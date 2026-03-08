@@ -65,6 +65,8 @@ export default function AdminKDSTab() {
   const [menuPrepTimes, setMenuPrepTimes] = useState<Record<string, number>>({});
   const [fullscreen, setFullscreen] = useState(false);
   const [now, setNow] = useState(new Date());
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const prevOrderIdsRef = useRef<Set<string>>(new Set());
 
   const fetchMenuPrepTimes = useCallback(async () => {
     const { data } = await (supabase as any).from('menu_items').select('name, prep_time');
