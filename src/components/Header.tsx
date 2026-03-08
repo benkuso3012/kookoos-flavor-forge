@@ -208,10 +208,20 @@ const Header = () => {
                           {item.label}
                         </Link>
                       ))}
+                      {isAdmin && (
+                        <Link
+                          to="/admin"
+                          onClick={() => setIsOpen(false)}
+                          className="flex items-center text-sm font-medium text-muted-foreground hover:text-primary py-2"
+                        >
+                          <Shield className="mr-2 h-4 w-4" />
+                          Admin Dashboard
+                        </Link>
+                      )}
                       <Button 
                         variant="ghost" 
                         onClick={handleSignOut}
-                        className="w-full justify-start text-red-600 hover:text-red-600 hover:bg-red-50"
+                        className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
                       >
                         <LogOut className="mr-2 h-4 w-4" />
                         Sign out
