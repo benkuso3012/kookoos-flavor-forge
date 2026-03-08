@@ -136,6 +136,18 @@ export default function AdminDashboard() {
     setCategories(data || []);
   };
 
+  const fetchStores = async () => {
+    const { data } = await (supabase as any).from('stores').select('*').order('name');
+    setStores(data || []);
+  };
+
+  const toggleStoreActive = async (storeId: string, currentActive: boolean) => {
+    const { error } = await (supabase as any).from('stores').update({ is_active: !currentActive }).eq('id', storeId);
+    if (error) { toast.error('Failed to update store'); return; }
+    toast.success(`Store ${!currentActive ? 'activated' : 'deactivated'}`);
+    setStores(prev => prev.map(s => s.id === storeId ? { ...s, is_active: !currentActive } : s));
+  };
+
   const updateOrderStatus = async (orderId: string, status: string) => {
     const { error } = await (supabase as any).from('orders').update({ status }).eq('id', orderId);
     if (error) { toast.error('Failed to update order'); return; }
