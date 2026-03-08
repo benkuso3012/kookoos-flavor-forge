@@ -2,72 +2,52 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BarChart3, ShoppingBag, UtensilsCrossed, Users, TrendingUp, Clock, DollarSign, LogOut, Home, RefreshCw, Plus, Pencil, MapPin, HelpCircle, Tag } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import MenuItemModal from '@/components/admin/MenuItemModal';
+import { RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+import AdminSidebar from '@/components/admin/AdminSidebar';
+import AdminOnboarding from '@/components/admin/AdminOnboarding';
 import OrderNotifications from '@/components/admin/OrderNotifications';
-import StoreModal from '@/components/admin/StoreModal';
-import AdminOnboarding, { resetAdminOnboarding } from '@/components/admin/AdminOnboarding';
+import AdminNotificationCenter from '@/components/admin/AdminNotificationCenter';
 import AdminOverviewTab from '@/components/admin/AdminOverviewTab';
 import AdminOrdersTab from '@/components/admin/AdminOrdersTab';
+import AdminMenuTab from '@/components/admin/AdminMenuTab';
 import AdminDailySpecialsTab from '@/components/admin/AdminDailySpecialsTab';
+import AdminCustomersTab from '@/components/admin/AdminCustomersTab';
+import AdminRolesTab from '@/components/admin/AdminRolesTab';
+import AdminInventoryTab from '@/components/admin/AdminInventoryTab';
+import AdminSettingsTab from '@/components/admin/AdminSettingsTab';
+import AdminAuditTab from '@/components/admin/AdminAuditTab';
+import MenuItemModal from '@/components/admin/MenuItemModal';
+import StoreModal from '@/components/admin/StoreModal';
+
+// Shared types
+import type { AdminDashboardState } from '@/components/admin/adminTypes';
 
 type Order = {
-  id: string;
-  status: string;
-  total_amount: number;
-  delivery_address: string;
-  phone: string;
-  notes: string | null;
-  created_at: string;
-  user_id: string;
+  id: string; status: string; total_amount: number;
+  delivery_address: string; phone: string; notes: string | null;
+  created_at: string; user_id: string;
 };
-
 type MenuItem = {
-  id: string;
-  name: string;
-  price: number;
-  category_id: string | null;
-  is_available: boolean;
-  is_featured: boolean;
-  is_spicy: boolean;
-  is_vegetarian: boolean;
-  is_vegan: boolean;
-  is_gluten_free: boolean;
-  calories: number | null;
-  rating: number;
-  prep_time: number;
-  description: string | null;
-  image_url: string | null;
+  id: string; name: string; price: number; category_id: string | null;
+  is_available: boolean; is_featured: boolean; is_spicy: boolean;
+  is_vegetarian: boolean; is_vegan: boolean; is_gluten_free: boolean;
+  calories: number | null; rating: number; prep_time: number;
+  description: string | null; image_url: string | null;
 };
-
 type Category = { id: string; name: string };
-
 type Store = {
-  id: string;
-  name: string;
-  address: string;
-  phone: string | null;
-  hours: string | null;
-  is_active: boolean;
-  is_flagship: boolean;
-  latitude: number | null;
-  longitude: number | null;
+  id: string; name: string; address: string; phone: string | null;
+  hours: string | null; is_active: boolean; is_flagship: boolean;
+  latitude: number | null; longitude: number | null;
 };
-
 type DailyStats = {
-  totalOrders: number;
-  totalRevenue: number;
-  pendingOrders: number;
-  avgOrderValue: number;
-  totalMenuItems: number;
-  totalCustomers: number;
+  totalOrders: number; totalRevenue: number; pendingOrders: number;
+  avgOrderValue: number; totalMenuItems: number; totalCustomers: number;
 };
 
 export default function AdminDashboard() {
@@ -103,8 +83,7 @@ export default function AdminDashboard() {
   }, []);
 
   const fetchStats = async () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
     const [ordersRes, menuRes, profilesRes] = await Promise.all([
       (supabase as any).from('orders').select('*'),
       (supabase as any).from('menu_items').select('id', { count: 'exact', head: true }),
@@ -114,12 +93,10 @@ export default function AdminDashboard() {
     const todayOrders = allOrders.filter(o => new Date(o.created_at) >= today);
     const totalRevenue = todayOrders.reduce((s, o) => s + Number(o.total_amount), 0);
     setStats({
-      totalOrders: todayOrders.length,
-      totalRevenue,
+      totalOrders: todayOrders.length, totalRevenue,
       pendingOrders: allOrders.filter(o => o.status === 'pending').length,
       avgOrderValue: todayOrders.length ? totalRevenue / todayOrders.length : 0,
-      totalMenuItems: menuRes.count || 0,
-      totalCustomers: profilesRes.count || 0,
+      totalMenuItems: menuRes.count || 0, totalCustomers: profilesRes.count || 0,
     });
   };
 
@@ -127,17 +104,14 @@ export default function AdminDashboard() {
     const { data } = await (supabase as any).from('orders').select('*').order('created_at', { ascending: false }).limit(50);
     setOrders(data || []);
   };
-
   const fetchMenuItems = async () => {
     const { data } = await (supabase as any).from('menu_items').select('*').order('name');
     setMenuItems(data || []);
   };
-
   const fetchCategories = async () => {
     const { data } = await (supabase as any).from('menu_categories').select('id, name').order('sort_order');
     setCategories(data || []);
   };
-
   const fetchStores = async () => {
     const { data } = await (supabase as any).from('stores').select('*').order('name');
     setStores(data || []);
@@ -171,21 +145,13 @@ export default function AdminDashboard() {
     setMenuItems(prev => prev.map(i => i.id === itemId ? { ...i, is_featured: !featured } : i));
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/');
-  };
-
-  const openCreate = () => { setEditItem(null); setModalOpen(true); };
-  const openEdit = (item: MenuItem) => { setEditItem(item); setModalOpen(true); };
-
   const statusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
       case 'preparing': return 'bg-blue-100 text-blue-800 border-blue-300';
       case 'ready': return 'bg-green-100 text-green-800 border-green-300';
-      case 'delivered': return 'bg-gray-100 text-gray-600 border-gray-300';
-      case 'cancelled': return 'bg-red-100 text-red-800 border-red-300';
+      case 'delivered': return 'bg-muted text-muted-foreground border-border';
+      case 'cancelled': return 'bg-destructive/10 text-destructive border-destructive/20';
       default: return 'bg-muted text-muted-foreground';
     }
   };
@@ -197,244 +163,134 @@ export default function AdminDashboard() {
       </div>
     );
   }
-
   if (!isAdmin) return null;
 
+  const tabTitles: Record<string, string> = {
+    overview: 'Overview', orders: 'Orders', menu: 'Menu Items',
+    inventory: 'Inventory', specials: 'Daily Specials', stores: 'Stores',
+    customers: 'Customers', roles: 'Role Management', settings: 'Settings', audit: 'Activity Log',
+  };
+
   return (
-    <div className="min-h-screen bg-secondary/30">
-      <AdminOnboarding onComplete={() => {}} />
-      <OrderNotifications onNewOrder={fetchAll} />
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-secondary/30">
+        <AdminOnboarding onComplete={() => {}} />
+        <OrderNotifications onNewOrder={fetchAll} />
 
-      {/* Top Nav */}
-      <header className="bg-card border-b border-border sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-              <BarChart3 className="w-5 h-5 text-primary-foreground" />
+        <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} pendingOrders={stats.pendingOrders} />
+
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Top Bar */}
+          <header className="h-14 flex items-center justify-between border-b border-border bg-card px-4 sticky top-0 z-40">
+            <div className="flex items-center gap-3">
+              <SidebarTrigger />
+              <h2 className="text-lg font-semibold text-foreground">{tabTitles[activeTab] || 'Dashboard'}</h2>
             </div>
-            <div>
-              <h1 className="text-lg font-bold text-foreground">Kookoos Admin</h1>
-              <p className="text-xs text-muted-foreground">Restaurant Dashboard</p>
+            <div className="flex items-center gap-2">
+              <AdminNotificationCenter />
+              <Button variant="ghost" size="sm" onClick={fetchAll} disabled={refreshing}>
+                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
+          </header>
+
+          {/* Stats Row (always visible) */}
+          <div className="px-4 sm:px-6 pt-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+              {[
+                { label: "Today's Orders", value: stats.totalOrders, color: 'text-primary' },
+                { label: "Revenue", value: `TSh ${stats.totalRevenue.toLocaleString()}`, color: 'text-green-600' },
+                { label: 'Pending', value: stats.pendingOrders, color: 'text-yellow-600' },
+                { label: 'Avg Order', value: `TSh ${Math.round(stats.avgOrderValue).toLocaleString()}`, color: 'text-blue-600' },
+                { label: 'Menu Items', value: stats.totalMenuItems, color: 'text-purple-600' },
+                { label: 'Customers', value: stats.totalCustomers, color: 'text-pink-600' },
+              ].map((stat, i) => (
+                <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
+                  className="bg-card rounded-lg border border-border p-3"
+                >
+                  <p className={`text-xl font-bold ${stat.color}`}>{stat.value}</p>
+                  <p className="text-[11px] text-muted-foreground">{stat.label}</p>
+                </motion.div>
+              ))}
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => { resetAdminOnboarding(); window.location.reload(); }} title="Restart tour">
-              <HelpCircle className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={fetchAll} disabled={refreshing}>
-              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
-              <Home className="w-4 h-4" />
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleLogout}>
-              <LogOut className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-          {[
-            { label: "Today's Orders", value: stats.totalOrders, icon: ShoppingBag, color: 'text-primary' },
-            { label: "Today's Revenue", value: `TSh ${stats.totalRevenue.toLocaleString()}`, icon: DollarSign, color: 'text-green-600' },
-            { label: 'Pending Orders', value: stats.pendingOrders, icon: Clock, color: 'text-yellow-600' },
-            { label: 'Avg Order', value: `TSh ${Math.round(stats.avgOrderValue).toLocaleString()}`, icon: TrendingUp, color: 'text-blue-600' },
-            { label: 'Menu Items', value: stats.totalMenuItems, icon: UtensilsCrossed, color: 'text-purple-600' },
-            { label: 'Customers', value: stats.totalCustomers, icon: Users, color: 'text-pink-600' },
-          ].map((stat, i) => (
-            <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-              <Card className="border-border">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <stat.icon className={`w-5 h-5 ${stat.color}`} />
-                  </div>
-                  <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground">{stat.label}</p>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="bg-card border border-border flex-wrap h-auto gap-1 p-1">
-            <TabsTrigger value="overview" className="gap-1.5"><BarChart3 className="w-4 h-4" /> Overview</TabsTrigger>
-            <TabsTrigger value="orders" className="gap-1.5"><ShoppingBag className="w-4 h-4" /> Orders</TabsTrigger>
-            <TabsTrigger value="menu" className="gap-1.5"><UtensilsCrossed className="w-4 h-4" /> Menu</TabsTrigger>
-            <TabsTrigger value="specials" className="gap-1.5"><Tag className="w-4 h-4" /> Specials</TabsTrigger>
-            <TabsTrigger value="stores" className="gap-1.5"><MapPin className="w-4 h-4" /> Stores</TabsTrigger>
-          </TabsList>
-
-          {/* Overview Tab */}
-          <TabsContent value="overview">
-            <AdminOverviewTab
-              stats={stats}
-              orders={orders}
-              menuItems={menuItems}
-              stores={stores}
-              statusColor={statusColor}
-              onNavigateTab={setActiveTab}
-            />
-          </TabsContent>
-
-          {/* Orders Tab */}
-          <TabsContent value="orders">
-            <AdminOrdersTab
-              orders={orders}
-              statusColor={statusColor}
-              updateOrderStatus={updateOrderStatus}
-            />
-          </TabsContent>
-
-          {/* Menu Tab */}
-          <TabsContent value="menu">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="text-foreground">Menu Management</CardTitle>
-                  <CardDescription>Create, edit, and manage menu items — {menuItems.length} items total</CardDescription>
+          {/* Tab Content */}
+          <main className="flex-1 px-4 sm:px-6 pb-6">
+            {activeTab === 'overview' && (
+              <AdminOverviewTab stats={stats} orders={orders} menuItems={menuItems} stores={stores} statusColor={statusColor} onNavigateTab={setActiveTab} />
+            )}
+            {activeTab === 'orders' && (
+              <AdminOrdersTab orders={orders} statusColor={statusColor} updateOrderStatus={updateOrderStatus} />
+            )}
+            {activeTab === 'menu' && (
+              <AdminMenuTab
+                menuItems={menuItems}
+                onOpenCreate={() => { setEditItem(null); setModalOpen(true); }}
+                onOpenEdit={(item) => { setEditItem(item); setModalOpen(true); }}
+                onToggleAvailability={toggleMenuAvailability}
+                onToggleFeatured={toggleFeatured}
+                onRefresh={() => { fetchMenuItems(); fetchStats(); }}
+              />
+            )}
+            {activeTab === 'inventory' && <AdminInventoryTab />}
+            {activeTab === 'specials' && <AdminDailySpecialsTab />}
+            {activeTab === 'stores' && (
+              <div className="space-y-4">
+                <div className="flex justify-end">
+                  <Button onClick={() => { setEditStore(null); setStoreModalOpen(true); }} className="gap-1.5">
+                    + Add Store
+                  </Button>
                 </div>
-                <Button onClick={openCreate} className="gap-1.5">
-                  <Plus className="w-4 h-4" /> Add Item
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Price</TableHead>
-                        <TableHead>Rating</TableHead>
-                        <TableHead>Prep Time</TableHead>
-                        <TableHead>Available</TableHead>
-                        <TableHead>Featured</TableHead>
-                        <TableHead>Edit</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {menuItems.map(item => (
-                        <TableRow key={item.id}>
-                          <TableCell className="font-medium">{item.name}</TableCell>
-                          <TableCell>TSh {Number(item.price).toLocaleString()}</TableCell>
-                          <TableCell>{item.rating} ⭐</TableCell>
-                          <TableCell>{item.prep_time} min</TableCell>
-                          <TableCell>
-                            <Button
-                              variant={item.is_available ? 'default' : 'outline'}
-                              size="sm"
-                              className="text-xs h-7"
-                              onClick={() => toggleMenuAvailability(item.id, item.is_available)}
-                            >
-                              {item.is_available ? 'Available' : 'Unavailable'}
-                            </Button>
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant={item.is_featured ? 'default' : 'ghost'}
-                              size="sm"
-                              className="text-xs h-7"
-                              onClick={() => toggleFeatured(item.id, item.is_featured)}
-                            >
-                              {item.is_featured ? '⭐ Featured' : 'Set Featured'}
-                            </Button>
-                          </TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="sm" onClick={() => openEdit(item)}>
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Daily Specials Tab */}
-          <TabsContent value="specials">
-            <AdminDailySpecialsTab />
-          </TabsContent>
-
-          {/* Stores Tab */}
-          <TabsContent value="stores">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="text-foreground">Store Management</CardTitle>
-                  <CardDescription>Create, edit, and manage store locations — {stores.length} locations</CardDescription>
-                </div>
-                <Button onClick={() => { setEditStore(null); setStoreModalOpen(true); }} className="gap-1.5">
-                  <Plus className="w-4 h-4" /> Add Store
-                </Button>
-              </CardHeader>
-              <CardContent>
-                {stores.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">No stores yet</p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Address</TableHead>
-                          <TableHead>Phone</TableHead>
-                          <TableHead>Hours</TableHead>
-                          <TableHead>Flagship</TableHead>
-                          <TableHead>Active</TableHead>
-                          <TableHead>Edit</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {stores.map(store => (
-                          <TableRow key={store.id} className={!store.is_active ? 'opacity-50' : ''}>
-                            <TableCell className="font-medium">{store.name}</TableCell>
-                            <TableCell className="text-sm max-w-[200px] truncate">{store.address}</TableCell>
-                            <TableCell className="text-sm">{store.phone || '—'}</TableCell>
-                            <TableCell className="text-sm">{store.hours || '—'}</TableCell>
-                            <TableCell>{store.is_flagship ? '⭐' : '—'}</TableCell>
-                            <TableCell>
-                              <Switch
-                                checked={store.is_active}
-                                onCheckedChange={() => toggleStoreActive(store.id, store.is_active)}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Button variant="ghost" size="sm" onClick={() => { setEditStore(store); setStoreModalOpen(true); }}>
-                                <Pencil className="w-4 h-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
+                {/* Reuse existing store table inline */}
+                <div className="bg-card rounded-lg border border-border overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        {['Name', 'Address', 'Phone', 'Hours', 'Flagship', 'Active', 'Edit'].map(h => (
+                          <th key={h} className="text-left p-3 text-xs font-medium text-muted-foreground">{h}</th>
                         ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </main>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stores.map(store => (
+                        <tr key={store.id} className={`border-t border-border ${!store.is_active ? 'opacity-50' : ''}`}>
+                          <td className="p-3 font-medium text-foreground">{store.name}</td>
+                          <td className="p-3 text-muted-foreground max-w-[200px] truncate">{store.address}</td>
+                          <td className="p-3 text-muted-foreground">{store.phone || '—'}</td>
+                          <td className="p-3 text-muted-foreground">{store.hours || '—'}</td>
+                          <td className="p-3">{store.is_flagship ? '⭐' : '—'}</td>
+                          <td className="p-3">
+                            <Button size="sm" variant={store.is_active ? 'default' : 'outline'} className="text-xs h-7"
+                              onClick={() => toggleStoreActive(store.id, store.is_active)}>
+                              {store.is_active ? 'Active' : 'Inactive'}
+                            </Button>
+                          </td>
+                          <td className="p-3">
+                            <Button variant="ghost" size="sm" onClick={() => { setEditStore(store); setStoreModalOpen(true); }}>✏️</Button>
+                          </td>
+                        </tr>
+                      ))}
+                      {stores.length === 0 && (
+                        <tr><td colSpan={7} className="text-center text-muted-foreground p-8">No stores yet</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+            {activeTab === 'customers' && <AdminCustomersTab />}
+            {activeTab === 'roles' && <AdminRolesTab />}
+            {activeTab === 'settings' && <AdminSettingsTab />}
+            {activeTab === 'audit' && <AdminAuditTab />}
+          </main>
+        </div>
 
-      <MenuItemModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        item={editItem}
-        onSaved={() => { fetchMenuItems(); fetchStats(); }}
-        categories={categories}
-      />
-      <StoreModal
-        open={storeModalOpen}
-        onClose={() => setStoreModalOpen(false)}
-        store={editStore}
-        onSaved={fetchStores}
-      />
-    </div>
+        <MenuItemModal open={modalOpen} onClose={() => setModalOpen(false)} item={editItem}
+          onSaved={() => { fetchMenuItems(); fetchStats(); }} categories={categories} />
+        <StoreModal open={storeModalOpen} onClose={() => setStoreModalOpen(false)}
+          store={editStore} onSaved={fetchStores} />
+      </div>
+    </SidebarProvider>
   );
 }
