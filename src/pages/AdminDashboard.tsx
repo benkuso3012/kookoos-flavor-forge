@@ -306,6 +306,13 @@ export default function AdminDashboard() {
               </div>
             )}
             {activeTab === 'customers' && <AdminCustomersTab />}
+            {activeTab === 'pos' && <AdminPOSTab />}
+            {activeTab === 'staff' && <AdminStaffTab />}
+            {activeTab === 'comms' && <AdminCommsTab orders={orders} />}
+            {activeTab === 'promotions' && <AdminPromotionsTab />}
+            {activeTab === 'suppliers' && <AdminSuppliersTab />}
+            {activeTab === 'delivery-zones' && <AdminDeliveryZonesTab />}
+            {activeTab === 'reports' && <AdminReportsTab orders={orders} />}
             {activeTab === 'roles' && <AdminRolesTab />}
             {activeTab === 'settings' && <AdminSettingsTab />}
             {activeTab === 'audit' && <AdminAuditTab />}
