@@ -3,20 +3,38 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Star, ShoppingBag, Plus, Minus } from "lucide-react";
+import { ArrowRight, Star, ShoppingBag, Plus, Minus, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from '@supabase/supabase-js';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import bombaBox from "@/assets/bomba-box.jpg";
-import chickenCombo from "@/assets/chicken-combo.jpg";
-import crispyChicken from "@/assets/crispy-chicken.jpg";
+
+type MenuItem = {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  image_url: string | null;
+  is_featured: boolean;
+  is_spicy: boolean;
+  rating: number;
+  category_id: string | null;
+};
+
+type Category = {
+  id: string;
+  name: string;
+  sort_order: number;
+};
 
 const Menu = () => {
   const { toast } = useToast();
-  const [cart, setCart] = useState<{[key: number]: number}>({});
+  const [cart, setCart] = useState<{[key: string]: number}>({});
   const [user, setUser] = useState<User | null>(null);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,7 +43,6 @@ const Menu = () => {
       setUser(user);
     });
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setUser(session?.user ?? null);
@@ -35,56 +52,26 @@ const Menu = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const menuCategories = [
-    {
-      name: "Signature Boxes",
-      items: [
-        {
-          id: 1,
-          name: "Bomba Box",
-          description: "Our signature fried chicken with spiced fries and drink",
-          price: 15.00,
-          image: bombaBox,
-          badge: "SIGNATURE",
-          rating: 4.9
-        },
-        {
-          id: 2,
-          name: "Chicken Baga",
-          description: "Crispy chicken burger with our secret sauce",
-          price: 12.00,
-          image: chickenCombo,
-          badge: "POPULAR",
-          rating: 4.8
-        }
-      ]
-    },
-    {
-      name: "Wings & Pieces",
-      items: [
-        {
-          id: 3,
-          name: "Crispy Wings",
-          description: "Golden crispy chicken wings with tangy orange sauce",
-          price: 8.00,
-          image: crispyChicken,
-          badge: "SPICY",
-          rating: 4.7
-        },
-        {
-          id: 4,
-          name: "Chicken Strips",
-          description: "Tender chicken strips with honey mustard sauce",
-          price: 10.00,
-          image: crispyChicken,
-          badge: "NEW",
-          rating: 4.6
-        }
-      ]
-    }
-  ];
+  useEffect(() => {
+    const loadMenu = async () => {
+      const [itemsRes, catsRes] = await Promise.all([
+        supabase.from('menu_items').select('*').eq('is_available', true).order('name'),
+        supabase.from('menu_categories').select('*').order('sort_order'),
+      ]);
+      setMenuItems(itemsRes.data || []);
+      setCategories(catsRes.data || []);
+      setLoading(false);
+    };
+    loadMenu();
+  }, []);
 
-  const addToCart = (itemId: number, itemName: string) => {
+  const getBadgeText = (item: MenuItem) => {
+    if (item.is_featured) return "SIGNATURE";
+    if (item.is_spicy) return "SPICY";
+    return null;
+  };
+
+  const addToCart = (itemId: string, itemName: string) => {
     setCart(prev => ({
       ...prev,
       [itemId]: (prev[itemId] || 0) + 1
@@ -95,7 +82,7 @@ const Menu = () => {
     });
   };
 
-  const removeFromCart = (itemId: number) => {
+  const removeFromCart = (itemId: string) => {
     setCart(prev => {
       const newCart = { ...prev };
       if (newCart[itemId] > 1) {
@@ -131,15 +118,10 @@ const Menu = () => {
       return;
     }
 
-    // Convert cart to cart items format
     const cartItems = Object.entries(cart).map(([itemId, quantity]) => {
-      const category = menuCategories.find(cat => 
-        cat.items.some(item => item.id === parseInt(itemId))
-      );
-      const item = category?.items.find(item => item.id === parseInt(itemId));
-      
+      const item = menuItems.find(i => i.id === itemId);
       return {
-        id: parseInt(itemId),
+        id: itemId,
         name: item?.name || '',
         price: item?.price || 0,
         quantity
@@ -149,13 +131,34 @@ const Menu = () => {
     navigate("/checkout", { state: { cartItems } });
   };
 
+  const groupedItems = categories.map(cat => ({
+    category: cat,
+    items: menuItems.filter(item => item.category_id === cat.id)
+  })).filter(group => group.items.length > 0);
+
+  // Add uncategorized items
+  const uncategorized = menuItems.filter(item => !item.category_id);
+  if (uncategorized.length > 0) {
+    groupedItems.push({
+      category: { id: 'uncategorized', name: 'Other Items', sort_order: 999 },
+      items: uncategorized
+    });
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4">
-          {/* Header */}
           <div className="text-center mb-16">
             <Badge variant="outline" className="mb-4 text-primary border-primary">
               FULL MENU
@@ -168,86 +171,91 @@ const Menu = () => {
             </p>
           </div>
 
-          {/* Menu Categories */}
-          {menuCategories.map((category, categoryIndex) => (
-            <div key={categoryIndex} className="mb-16">
+          {groupedItems.map((group) => (
+            <div key={group.category.id} className="mb-16">
               <h2 className="font-heading text-3xl font-bold text-foreground mb-8 text-center">
-                {category.name}
+                {group.category.name}
               </h2>
               
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {category.items.map((item) => (
-                  <Card 
-                    key={item.id} 
-                    className="group hover:shadow-glow transition-all duration-300 hover:-translate-y-2 border-0 shadow-card overflow-hidden"
-                  >
-                    <div className="relative overflow-hidden">
-                      <img 
-                        src={item.image} 
-                        alt={item.name}
-                        className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                      <Badge 
-                        className="absolute top-4 left-4 bg-primary text-primary-foreground font-bold"
-                      >
-                        {item.badge}
-                      </Badge>
-                      <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
-                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                        <span className="text-xs font-bold">{item.rating}</span>
-                      </div>
-                    </div>
-                    
-                    <CardContent className="p-6">
-                      <h3 className="font-heading text-xl font-bold mb-2">{item.name}</h3>
-                      <p className="text-muted-foreground mb-4 text-sm leading-relaxed">
-                        {item.description}
-                      </p>
-                      
-                      <div className="flex items-center justify-between mb-4">
-                        <span className="font-heading text-2xl font-bold text-primary">
-                          ${item.price.toFixed(2)}
-                        </span>
-                      </div>
-
-                      {cart[item.id] ? (
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Button 
-                              size="sm"
-                              variant="outline"
-                              onClick={() => removeFromCart(item.id)}
-                            >
-                              <Minus className="w-4 h-4" />
-                            </Button>
-                            <span className="font-bold text-lg">{cart[item.id]}</span>
-                            <Button 
-                              size="sm"
-                              onClick={() => addToCart(item.id, item.name)}
-                            >
-                              <Plus className="w-4 h-4" />
-                            </Button>
-                          </div>
+                {group.items.map((item) => {
+                  const badge = getBadgeText(item);
+                  return (
+                    <Card 
+                      key={item.id} 
+                      className="group hover:shadow-glow transition-all duration-300 hover:-translate-y-2 border-0 shadow-card overflow-hidden"
+                    >
+                      <div className="relative overflow-hidden">
+                        <img 
+                          src={item.image_url || '/placeholder.svg'} 
+                          alt={item.name}
+                          className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                        {badge && (
+                          <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground font-bold">
+                            {badge}
+                          </Badge>
+                        )}
+                        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
+                          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                          <span className="text-xs font-bold">{Number(item.rating).toFixed(1)}</span>
                         </div>
-                      ) : (
-                        <Button 
-                          className="w-full bg-primary hover:bg-primary/90 font-bold group"
-                          onClick={() => addToCart(item.id, item.name)}
-                        >
-                          ADD TO CART
-                          <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                        </Button>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
+                      </div>
+                      
+                      <CardContent className="p-6">
+                        <h3 className="font-heading text-xl font-bold mb-2">{item.name}</h3>
+                        <p className="text-muted-foreground mb-4 text-sm leading-relaxed">
+                          {item.description || 'Delicious menu item'}
+                        </p>
+                        
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="font-heading text-2xl font-bold text-primary">
+                            TSh {Number(item.price).toLocaleString()}
+                          </span>
+                        </div>
+
+                        {cart[item.id] ? (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Button 
+                                size="sm"
+                                variant="outline"
+                                onClick={() => removeFromCart(item.id)}
+                              >
+                                <Minus className="w-4 h-4" />
+                              </Button>
+                              <span className="font-bold text-lg">{cart[item.id]}</span>
+                              <Button 
+                                size="sm"
+                                onClick={() => addToCart(item.id, item.name)}
+                              >
+                                <Plus className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <Button 
+                            className="w-full bg-primary hover:bg-primary/90 font-bold group"
+                            onClick={() => addToCart(item.id, item.name)}
+                          >
+                            ADD TO CART
+                            <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             </div>
           ))}
+
+          {groupedItems.length === 0 && (
+            <p className="text-center text-muted-foreground py-16">No menu items available yet.</p>
+          )}
         </div>
       </main>
 
-      {/* Floating Cart Button */}
       {getTotalItems() > 0 && (
         <div className="fixed bottom-6 right-6 z-50">
           <Button 
