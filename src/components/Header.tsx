@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Menu, X, User, LogOut, Heart, MapPin, Percent, ShoppingBag, Star } from "lucide-react";
+import { Menu, X, User, LogOut, Heart, MapPin, Percent, ShoppingBag, Star, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
