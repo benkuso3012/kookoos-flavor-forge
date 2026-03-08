@@ -8,9 +8,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, differenceInMinutes } from 'date-fns';
-import { ChevronDown, ChevronUp, Phone, MapPin, StickyNote, Package, Filter, Search } from 'lucide-react';
+import { ChevronDown, ChevronUp, Phone, MapPin, StickyNote, Package, Filter, Search, Printer } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { usePrintReceipt } from './ReceiptPrinter';
 
 type Order = {
   id: string;
@@ -42,6 +43,7 @@ export default function AdminOrdersTab({ orders, statusColor, updateOrderStatus 
   const [loadingItems, setLoadingItems] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const { printReceipt } = usePrintReceipt();
 
   const toggleExpand = async (orderId: string) => {
     if (expandedOrder === orderId) {
@@ -229,13 +231,28 @@ export default function AdminOrdersTab({ orders, statusColor, updateOrderStatus 
                             )}
                           </div>
 
-                          {/* Status Update */}
+                          {/* Status Update & Print */}
                           <div className="flex items-center justify-between pt-2 border-t border-border">
                             <div className="text-xs text-muted-foreground">
                               Placed {format(new Date(order.created_at), 'EEEE, MMM d yyyy \'at\' HH:mm')} ({waitMins} min ago)
                             </div>
                             <div className="flex items-center gap-2">
-                              <span className="text-xs text-muted-foreground">Update status:</span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-xs h-8 gap-1"
+                                disabled={!items || items.length === 0}
+                                onClick={() => {
+                                  if (items && items.length > 0) {
+                                    printReceipt(order, items);
+                                  } else {
+                                    toast.error('Load order items first');
+                                  }
+                                }}
+                              >
+                                <Printer className="w-3.5 h-3.5" /> Print Receipt
+                              </Button>
+                              <span className="text-xs text-muted-foreground">Status:</span>
                               <Select value={order.status} onValueChange={(v) => updateOrderStatus(order.id, v)}>
                                 <SelectTrigger className="w-[140px] h-8 text-xs">
                                   <SelectValue />
