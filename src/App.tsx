@@ -17,6 +17,7 @@ import Profile from "./pages/Profile";
 import Favorites from "./pages/Favorites";
 import StoreLocator from "./pages/StoreLocator";
 import DailySpecials from "./pages/DailySpecials";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
