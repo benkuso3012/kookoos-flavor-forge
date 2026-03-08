@@ -6,11 +6,7 @@ import { ArrowRight, Star } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import bombaBox from "@/assets/bomba-box.jpg";
-import chickenCombo from "@/assets/chicken-combo.jpg";
-import crispyChicken from "@/assets/crispy-chicken.jpg";
-
-const fallbackImages = [bombaBox, chickenCombo, crispyChicken];
+import { getMenuItemImage } from "@/lib/menuImages";
 
 interface FeaturedItem {
   id: string;
