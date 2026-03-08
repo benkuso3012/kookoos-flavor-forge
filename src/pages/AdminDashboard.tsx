@@ -29,6 +29,7 @@ import AdminStaffTab from '@/components/admin/AdminStaffTab';
 import AdminSuppliersTab from '@/components/admin/AdminSuppliersTab';
 import AdminPromotionsTab from '@/components/admin/AdminPromotionsTab';
 import AdminDeliveryZonesTab from '@/components/admin/AdminDeliveryZonesTab';
+import AdminKDSTab from '@/components/admin/AdminKDSTab';
 import MenuItemModal from '@/components/admin/MenuItemModal';
 import StoreModal from '@/components/admin/StoreModal';
 
