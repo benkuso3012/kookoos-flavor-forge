@@ -1,11 +1,46 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, differenceInMinutes, differenceInSeconds } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, CheckCircle2, ChefHat, Bell, Maximize2, Minimize2, RefreshCw, Timer, TrendingUp, BarChart3, Gauge } from 'lucide-react';
+import { Clock, CheckCircle2, ChefHat, Bell, Maximize2, Minimize2, RefreshCw, Timer, TrendingUp, BarChart3, Gauge, Volume2, VolumeX } from 'lucide-react';
 import { toast } from 'sonner';
+
+// Web Audio API beep generator
+function playAlert(type: 'newOrder' | 'urgent' = 'newOrder') {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    if (type === 'newOrder') {
+      // Two-tone chime: C5 → E5
+      [523.25, 659.25].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.3, ctx.currentTime + i * 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.15 + 0.3);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(ctx.currentTime + i * 0.15);
+        osc.stop(ctx.currentTime + i * 0.15 + 0.3);
+      });
+    } else {
+      // Urgent: three rapid beeps
+      [0, 0.2, 0.4].forEach(delay => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.2, ctx.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.12);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(ctx.currentTime + delay);
+        osc.stop(ctx.currentTime + delay + 0.12);
+      });
+    }
+    setTimeout(() => ctx.close(), 2000);
+  } catch { /* Audio not supported */ }
+}
 
 type Order = {
   id: string; status: string; total_amount: number;
@@ -30,6 +65,8 @@ export default function AdminKDSTab() {
   const [menuPrepTimes, setMenuPrepTimes] = useState<Record<string, number>>({});
   const [fullscreen, setFullscreen] = useState(false);
   const [now, setNow] = useState(new Date());
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const prevOrderIdsRef = useRef<Set<string>>(new Set());
 
   const fetchMenuPrepTimes = useCallback(async () => {
     const { data } = await (supabase as any).from('menu_items').select('name, prep_time');
@@ -63,6 +100,32 @@ export default function AdminKDSTab() {
   }, []);
 
   useEffect(() => { fetchOrders(); fetchMenuPrepTimes(); }, [fetchOrders, fetchMenuPrepTimes]);
+
+  // Detect new orders and play sound
+  useEffect(() => {
+    const currentIds = new Set(orders.filter(o => o.status === 'pending').map(o => o.id));
+    const prevIds = prevOrderIdsRef.current;
+    if (soundEnabled && prevIds.size > 0) {
+      const newOrders = [...currentIds].filter(id => !prevIds.has(id));
+      if (newOrders.length > 0) {
+        playAlert('newOrder');
+      }
+    }
+    prevOrderIdsRef.current = currentIds;
+  }, [orders, soundEnabled]);
+
+  // Urgent order alert (every 30s check for overdue orders)
+  useEffect(() => {
+    if (!soundEnabled) return;
+    const interval = setInterval(() => {
+      const hasUrgent = orders.some(o => {
+        const elapsed = differenceInMinutes(new Date(), new Date(o.created_at));
+        return o.status !== 'ready' && elapsed > 15;
+      });
+      if (hasUrgent) playAlert('urgent');
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [orders, soundEnabled]);
 
   useEffect(() => {
     const channel = supabase
@@ -169,6 +232,14 @@ export default function AdminKDSTab() {
           </Badge>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant={soundEnabled ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => { setSoundEnabled(v => !v); if (!soundEnabled) playAlert('newOrder'); }}
+          >
+            {soundEnabled ? <Volume2 className="w-4 h-4 mr-1" /> : <VolumeX className="w-4 h-4 mr-1" />}
+            {soundEnabled ? 'Sound On' : 'Sound Off'}
+          </Button>
           <Button variant="outline" size="sm" onClick={fetchOrders}>
             <RefreshCw className="w-4 h-4 mr-1" /> Refresh
           </Button>
