@@ -23,15 +23,27 @@ const Header = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Get initial user
+    const checkAdmin = async (userId: string) => {
+      const { data } = await (supabase as any)
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('role', 'admin')
+        .maybeSingle();
+      setIsAdmin(!!data);
+    };
+
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
+      if (user) checkAdmin(user.id);
+      else setIsAdmin(false);
     });
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setUser(session?.user ?? null);
+        if (session?.user) checkAdmin(session.user.id);
+        else setIsAdmin(false);
       }
     );
 
