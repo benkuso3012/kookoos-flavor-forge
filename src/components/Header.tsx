@@ -11,26 +11,39 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Menu, X, User, LogOut, Heart, MapPin, Percent, ShoppingBag, Star } from "lucide-react";
+import { Menu, X, User, LogOut, Heart, MapPin, Percent, ShoppingBag, Star, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
 const Header = () => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Get initial user
+    const checkAdmin = async (userId: string) => {
+      const { data } = await (supabase as any)
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('role', 'admin')
+        .maybeSingle();
+      setIsAdmin(!!data);
+    };
+
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
+      if (user) checkAdmin(user.id);
+      else setIsAdmin(false);
     });
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setUser(session?.user ?? null);
+        if (session?.user) checkAdmin(session.user.id);
+        else setIsAdmin(false);
       }
     );
 
@@ -117,8 +130,19 @@ const Header = () => {
                       </Link>
                     </DropdownMenuItem>
                   ))}
+                  {isAdmin && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin" className="flex items-center">
+                          <Shield className="mr-2 h-4 w-4" />
+                          Admin Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
+                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign out
                   </DropdownMenuItem>
@@ -184,10 +208,20 @@ const Header = () => {
                           {item.label}
                         </Link>
                       ))}
+                      {isAdmin && (
+                        <Link
+                          to="/admin"
+                          onClick={() => setIsOpen(false)}
+                          className="flex items-center text-sm font-medium text-muted-foreground hover:text-primary py-2"
+                        >
+                          <Shield className="mr-2 h-4 w-4" />
+                          Admin Dashboard
+                        </Link>
+                      )}
                       <Button 
                         variant="ghost" 
                         onClick={handleSignOut}
-                        className="w-full justify-start text-red-600 hover:text-red-600 hover:bg-red-50"
+                        className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
                       >
                         <LogOut className="mr-2 h-4 w-4" />
                         Sign out
