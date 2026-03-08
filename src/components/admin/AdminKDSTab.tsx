@@ -232,6 +232,14 @@ export default function AdminKDSTab() {
           </Badge>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant={soundEnabled ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => { setSoundEnabled(v => !v); if (!soundEnabled) playAlert('newOrder'); }}
+          >
+            {soundEnabled ? <Volume2 className="w-4 h-4 mr-1" /> : <VolumeX className="w-4 h-4 mr-1" />}
+            {soundEnabled ? 'Sound On' : 'Sound Off'}
+          </Button>
           <Button variant="outline" size="sm" onClick={fetchOrders}>
             <RefreshCw className="w-4 h-4 mr-1" /> Refresh
           </Button>
