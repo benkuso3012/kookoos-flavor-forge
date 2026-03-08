@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BarChart3, ShoppingBag, UtensilsCrossed, Users, TrendingUp, Clock, DollarSign, LogOut, Home, RefreshCw, Plus, Pencil, MapPin } from 'lucide-react';
+import { BarChart3, ShoppingBag, UtensilsCrossed, Users, TrendingUp, Clock, DollarSign, LogOut, Home, RefreshCw, Plus, Pencil, MapPin, HelpCircle } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
