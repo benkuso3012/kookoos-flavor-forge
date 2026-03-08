@@ -78,6 +78,18 @@ export default function AdminDashboard() {
     if (isAdmin) fetchAll();
   }, [isAdmin]);
 
+  // Real-time subscription: auto-refresh when new orders come in (cashier payments)
+  useEffect(() => {
+    if (!isAdmin) return;
+    const channel = supabase
+      .channel('admin-orders-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+        fetchAll();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [isAdmin]);
+
   const fetchAll = useCallback(async () => {
     setRefreshing(true);
     await Promise.all([fetchStats(), fetchOrders(), fetchMenuItems(), fetchCategories(), fetchStores()]);
