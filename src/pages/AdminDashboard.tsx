@@ -221,6 +221,9 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => { resetAdminOnboarding(); setShowOnboarding(true); window.location.reload(); }} title="Restart tour">
+              <HelpCircle className="w-4 h-4" />
+            </Button>
             <Button variant="ghost" size="sm" onClick={fetchAll} disabled={refreshing}>
               <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             </Button>
