@@ -29,6 +29,7 @@ import AdminStaffTab from '@/components/admin/AdminStaffTab';
 import AdminSuppliersTab from '@/components/admin/AdminSuppliersTab';
 import AdminPromotionsTab from '@/components/admin/AdminPromotionsTab';
 import AdminDeliveryZonesTab from '@/components/admin/AdminDeliveryZonesTab';
+import AdminKDSTab from '@/components/admin/AdminKDSTab';
 import MenuItemModal from '@/components/admin/MenuItemModal';
 import StoreModal from '@/components/admin/StoreModal';
 
@@ -188,7 +189,7 @@ export default function AdminDashboard() {
 
   const tabTitles: Record<string, string> = {
     overview: 'Overview', orders: 'Orders', pos: 'POS Cashier', menu: 'Menu Items',
-    inventory: 'Inventory', specials: 'Daily Specials', stores: 'Stores',
+    inventory: 'Inventory', specials: 'Daily Specials', stores: 'Stores', kds: 'Kitchen Display',
     customers: 'Customers', staff: 'Staff', comms: 'Communications',
     promotions: 'Promotions', suppliers: 'Suppliers', 'delivery-zones': 'Delivery Zones',
     reports: 'Reports & Export', roles: 'Role Management', settings: 'Settings', audit: 'Activity Log',
@@ -312,6 +313,7 @@ export default function AdminDashboard() {
             {activeTab === 'promotions' && <AdminPromotionsTab />}
             {activeTab === 'suppliers' && <AdminSuppliersTab />}
             {activeTab === 'delivery-zones' && <AdminDeliveryZonesTab />}
+            {activeTab === 'kds' && <AdminKDSTab />}
             {activeTab === 'reports' && <AdminReportsTab orders={orders} />}
             {activeTab === 'roles' && <AdminRolesTab />}
             {activeTab === 'settings' && <AdminSettingsTab />}

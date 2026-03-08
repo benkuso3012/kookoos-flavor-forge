@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import {
   BarChart3, ShoppingBag, UtensilsCrossed, Users, MapPin, Tag,
   Settings, Shield, Activity, Package, LogOut, Home, HelpCircle,
-  FileSpreadsheet, Monitor, MessageSquare, Truck, UserCog, Gift, MapPinned, Bell,
+  FileSpreadsheet, Monitor, MessageSquare, Truck, UserCog, Gift, MapPinned, Bell, ChefHat,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { resetAdminOnboarding } from './AdminOnboarding';
@@ -29,6 +29,7 @@ const dashboardItems = [
   { id: 'inventory', label: 'Inventory', icon: Package },
   { id: 'specials', label: 'Daily Specials', icon: Tag },
   { id: 'stores', label: 'Stores', icon: MapPin },
+  { id: 'kds', label: 'Kitchen Display', icon: ChefHat },
 ];
 
 const managementItems = [
