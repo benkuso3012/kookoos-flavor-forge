@@ -1,18 +1,19 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { format, differenceInMinutes } from 'date-fns';
+import { format, differenceInMinutes, differenceInSeconds } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, CheckCircle2, ChefHat, Bell, Maximize2, Minimize2, RefreshCw } from 'lucide-react';
+import { Clock, CheckCircle2, ChefHat, Bell, Maximize2, Minimize2, RefreshCw, Timer, TrendingUp, BarChart3, Gauge } from 'lucide-react';
 import { toast } from 'sonner';
 
 type Order = {
   id: string; status: string; total_amount: number;
   delivery_address: string; phone: string; notes: string | null;
-  created_at: string; user_id: string;
+  created_at: string; updated_at: string; user_id: string;
 };
 type OrderItem = { id: string; item_name: string; quantity: number; item_price: number };
+type MenuItemPrepTime = { name: string; prep_time: number };
 
 const KITCHEN_STATUSES = ['pending', 'preparing', 'ready'] as const;
 
@@ -24,25 +25,34 @@ const statusConfig: Record<string, { bg: string; border: string; badge: string; 
 
 export default function AdminKDSTab() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [completedOrders, setCompletedOrders] = useState<Order[]>([]);
   const [orderItems, setOrderItems] = useState<Record<string, OrderItem[]>>({});
+  const [menuPrepTimes, setMenuPrepTimes] = useState<Record<string, number>>({});
   const [fullscreen, setFullscreen] = useState(false);
   const [now, setNow] = useState(new Date());
 
-  const fetchOrders = useCallback(async () => {
-    const { data } = await (supabase as any)
-      .from('orders')
-      .select('*')
-      .in('status', KITCHEN_STATUSES)
-      .order('created_at', { ascending: true });
-    const list: Order[] = data || [];
-    setOrders(list);
+  const fetchMenuPrepTimes = useCallback(async () => {
+    const { data } = await (supabase as any).from('menu_items').select('name, prep_time');
+    const map: Record<string, number> = {};
+    (data || []).forEach((item: MenuItemPrepTime) => { map[item.name] = item.prep_time; });
+    setMenuPrepTimes(map);
+  }, []);
 
-    // Fetch items for all orders in parallel
+  const fetchOrders = useCallback(async () => {
+    // Fetch active + recently completed orders in parallel
+    const [activeRes, completedRes] = await Promise.all([
+      (supabase as any).from('orders').select('*').in('status', KITCHEN_STATUSES).order('created_at', { ascending: true }),
+      (supabase as any).from('orders').select('*').in('status', ['delivered', 'ready']).order('updated_at', { ascending: false }).limit(50),
+    ]);
+    const list: Order[] = activeRes.data || [];
+    const completed: Order[] = completedRes.data || [];
+    setOrders(list);
+    setCompletedOrders(completed);
+
+    // Fetch items for all active orders
     if (list.length > 0) {
       const results = await Promise.all(
-        list.map(o =>
-          (supabase as any).from('order_items').select('*').eq('order_id', o.id)
-        )
+        list.map(o => (supabase as any).from('order_items').select('*').eq('order_id', o.id))
       );
       const map: Record<string, OrderItem[]> = {};
       list.forEach((o, i) => { map[o.id] = results[i].data || []; });
@@ -52,15 +62,12 @@ export default function AdminKDSTab() {
     }
   }, []);
 
-  useEffect(() => { fetchOrders(); }, [fetchOrders]);
+  useEffect(() => { fetchOrders(); fetchMenuPrepTimes(); }, [fetchOrders, fetchMenuPrepTimes]);
 
-  // Real-time subscription
   useEffect(() => {
     const channel = supabase
       .channel('kds-orders')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
-        fetchOrders();
-      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => { fetchOrders(); })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [fetchOrders]);
@@ -70,6 +77,61 @@ export default function AdminKDSTab() {
     const interval = setInterval(() => setNow(new Date()), 15000);
     return () => clearInterval(interval);
   }, []);
+
+  // Calculate estimated prep time for an order based on its items
+  const getEstimatedPrepTime = useCallback((orderId: string): number => {
+    const items = orderItems[orderId] || [];
+    if (items.length === 0) return 15; // default
+    let maxPrepTime = 0;
+    items.forEach(item => {
+      const prepTime = menuPrepTimes[item.item_name] || 15;
+      // Use max prep time (parallel cooking) + extra per additional item
+      maxPrepTime = Math.max(maxPrepTime, prepTime);
+    });
+    // Add 2 min per extra item beyond the first for overhead
+    const extraItems = Math.max(0, items.reduce((s, i) => s + i.quantity, 0) - 1);
+    return maxPrepTime + Math.min(extraItems * 2, 10);
+  }, [orderItems, menuPrepTimes]);
+
+  // Analytics calculations
+  const analytics = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const todayCompleted = completedOrders.filter(o =>
+      new Date(o.updated_at) >= today && (o.status === 'delivered' || o.status === 'ready')
+    );
+
+    // Average completion time: difference between created_at and updated_at
+    const completionTimes = todayCompleted.map(o =>
+      differenceInMinutes(new Date(o.updated_at), new Date(o.created_at))
+    ).filter(t => t > 0 && t < 120); // filter outliers
+
+    const avgCompletionTime = completionTimes.length > 0
+      ? Math.round(completionTimes.reduce((s, t) => s + t, 0) / completionTimes.length)
+      : 0;
+
+    const fastestTime = completionTimes.length > 0 ? Math.min(...completionTimes) : 0;
+    const slowestTime = completionTimes.length > 0 ? Math.max(...completionTimes) : 0;
+
+    // Current active orders average wait
+    const activeWaitTimes = orders.map(o => differenceInMinutes(now, new Date(o.created_at)));
+    const avgCurrentWait = activeWaitTimes.length > 0
+      ? Math.round(activeWaitTimes.reduce((s, t) => s + t, 0) / activeWaitTimes.length)
+      : 0;
+
+    // Orders completed today
+    const completedToday = todayCompleted.length;
+
+    // On-time rate: orders completed within estimated prep time + 5min buffer
+    const onTimeCount = todayCompleted.filter(o => {
+      const completionTime = differenceInMinutes(new Date(o.updated_at), new Date(o.created_at));
+      return completionTime <= 20; // 20 min benchmark
+    }).length;
+    const onTimeRate = completedToday > 0 ? Math.round((onTimeCount / completedToday) * 100) : 100;
+
+    return { avgCompletionTime, fastestTime, slowestTime, avgCurrentWait, completedToday, onTimeRate };
+  }, [completedOrders, orders, now]);
 
   const advanceOrder = async (orderId: string, currentStatus: string) => {
     const nextStatus = currentStatus === 'pending' ? 'preparing' : currentStatus === 'preparing' ? 'ready' : 'delivered';
@@ -116,6 +178,26 @@ export default function AdminKDSTab() {
         </div>
       </div>
 
+      {/* Analytics Bar */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {[
+          { label: 'Avg Cook Time', value: `${analytics.avgCompletionTime}m`, icon: Timer, color: 'text-blue-600' },
+          { label: 'Fastest Today', value: `${analytics.fastestTime}m`, icon: TrendingUp, color: 'text-green-600' },
+          { label: 'Slowest Today', value: `${analytics.slowestTime}m`, icon: BarChart3, color: 'text-destructive' },
+          { label: 'Avg Wait Now', value: `${analytics.avgCurrentWait}m`, icon: Clock, color: 'text-yellow-600' },
+          { label: 'Completed Today', value: analytics.completedToday, icon: CheckCircle2, color: 'text-primary' },
+          { label: 'On-Time Rate', value: `${analytics.onTimeRate}%`, icon: Gauge, color: analytics.onTimeRate >= 80 ? 'text-green-600' : 'text-destructive' },
+        ].map((stat) => (
+          <div key={stat.label} className="bg-card rounded-lg border border-border p-3 flex items-center gap-3">
+            <stat.icon className={`w-5 h-5 ${stat.color} shrink-0`} />
+            <div>
+              <p className={`text-lg font-bold ${stat.color}`}>{stat.value}</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">{stat.label}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
       {/* 3-column lane layout */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 min-h-[60vh]">
         {(Object.keys(grouped) as Array<keyof typeof grouped>).map(status => {
@@ -143,7 +225,9 @@ export default function AdminKDSTab() {
                   )}
                   {grouped[status].map(order => {
                     const elapsed = getElapsedMinutes(order.created_at);
-                    const urgent = elapsed > 15;
+                    const estimatedPrep = getEstimatedPrepTime(order.id);
+                    const urgent = elapsed > estimatedPrep;
+                    const progressPct = Math.min(100, Math.round((elapsed / estimatedPrep) * 100));
                     const items = orderItems[order.id] || [];
 
                     return (
@@ -155,11 +239,11 @@ export default function AdminKDSTab() {
                         exit={{ opacity: 0, scale: 0.9, x: 100 }}
                         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                         className={`rounded-xl border-2 p-4 bg-card shadow-md ${
-                          urgent ? 'border-destructive animate-pulse' : 'border-border'
+                          urgent ? 'border-destructive' : 'border-border'
                         }`}
                       >
                         {/* Order header */}
-                        <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center justify-between mb-2">
                           <span className="text-lg font-bold text-foreground tracking-tight">
                             #{order.id.slice(-6).toUpperCase()}
                           </span>
@@ -169,12 +253,35 @@ export default function AdminKDSTab() {
                           </div>
                         </div>
 
+                        {/* Prep time estimate + progress bar */}
+                        <div className="mb-3">
+                          <div className="flex items-center justify-between text-[11px] mb-1">
+                            <span className="text-muted-foreground flex items-center gap-1">
+                              <Timer className="w-3 h-3" /> Est. {estimatedPrep}m
+                            </span>
+                            <span className={`font-semibold ${urgent ? 'text-destructive' : progressPct > 75 ? 'text-yellow-600' : 'text-green-600'}`}>
+                              {urgent ? `${elapsed - estimatedPrep}m over` : `${estimatedPrep - elapsed}m left`}
+                            </span>
+                          </div>
+                          <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                            <motion.div
+                              className={`h-full rounded-full ${
+                                urgent ? 'bg-destructive' : progressPct > 75 ? 'bg-yellow-500' : 'bg-green-500'
+                              }`}
+                              initial={{ width: 0 }}
+                              animate={{ width: `${progressPct}%` }}
+                              transition={{ duration: 0.5 }}
+                            />
+                          </div>
+                        </div>
+
                         {/* Items list */}
                         <div className="space-y-1.5 mb-4">
                           {items.map(item => (
                             <div key={item.id} className="flex items-center gap-2">
                               <span className="text-xl font-bold text-primary w-8 text-center">{item.quantity}×</span>
-                              <span className="text-sm font-medium text-foreground">{item.item_name}</span>
+                              <span className="text-sm font-medium text-foreground flex-1">{item.item_name}</span>
+                              <span className="text-[10px] text-muted-foreground">{menuPrepTimes[item.item_name] || 15}m</span>
                             </div>
                           ))}
                           {items.length === 0 && (
