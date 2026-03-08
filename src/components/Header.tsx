@@ -17,6 +17,7 @@ import { User as SupabaseUser } from '@supabase/supabase-js';
 
 const Header = () => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
