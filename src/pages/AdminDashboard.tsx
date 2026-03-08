@@ -83,6 +83,7 @@ export default function AdminDashboard() {
   const [editItem, setEditItem] = useState<MenuItem | null>(null);
   const [storeModalOpen, setStoreModalOpen] = useState(false);
   const [editStore, setEditStore] = useState<Store | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     if (!loading && !isAdmin) {
