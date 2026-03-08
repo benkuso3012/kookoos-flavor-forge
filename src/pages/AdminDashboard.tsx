@@ -448,6 +448,64 @@ export default function AdminDashboard() {
               </Card>
             </div>
           </TabsContent>
+
+          {/* Stores Tab */}
+          <TabsContent value="stores">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-foreground">Store Management</CardTitle>
+                  <CardDescription>Create, edit, and manage store locations</CardDescription>
+                </div>
+                <Button onClick={() => { setEditStore(null); setStoreModalOpen(true); }} className="gap-1.5">
+                  <Plus className="w-4 h-4" /> Add Store
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {stores.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">No stores yet</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Address</TableHead>
+                          <TableHead>Phone</TableHead>
+                          <TableHead>Hours</TableHead>
+                          <TableHead>Flagship</TableHead>
+                          <TableHead>Active</TableHead>
+                          <TableHead>Edit</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {stores.map(store => (
+                          <TableRow key={store.id} className={!store.is_active ? 'opacity-50' : ''}>
+                            <TableCell className="font-medium">{store.name}</TableCell>
+                            <TableCell className="text-sm max-w-[200px] truncate">{store.address}</TableCell>
+                            <TableCell className="text-sm">{store.phone || '—'}</TableCell>
+                            <TableCell className="text-sm">{store.hours || '—'}</TableCell>
+                            <TableCell>{store.is_flagship ? '⭐' : '—'}</TableCell>
+                            <TableCell>
+                              <Switch
+                                checked={store.is_active}
+                                onCheckedChange={() => toggleStoreActive(store.id, store.is_active)}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Button variant="ghost" size="sm" onClick={() => { setEditStore(store); setStoreModalOpen(true); }}>
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </main>
 
