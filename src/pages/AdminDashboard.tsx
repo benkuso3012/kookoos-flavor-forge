@@ -48,6 +48,18 @@ type MenuItem = {
 
 type Category = { id: string; name: string };
 
+type Store = {
+  id: string;
+  name: string;
+  address: string;
+  phone: string | null;
+  hours: string | null;
+  is_active: boolean;
+  is_flagship: boolean;
+  latitude: number | null;
+  longitude: number | null;
+};
+
 type DailyStats = {
   totalOrders: number;
   totalRevenue: number;
