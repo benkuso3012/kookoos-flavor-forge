@@ -29,6 +29,7 @@ const dashboardItems = [
   { id: 'inventory', label: 'Inventory', icon: Package },
   { id: 'specials', label: 'Daily Specials', icon: Tag },
   { id: 'stores', label: 'Stores', icon: MapPin },
+  { id: 'kds', label: 'Kitchen Display', icon: ChefHat },
 ];
 
 const managementItems = [

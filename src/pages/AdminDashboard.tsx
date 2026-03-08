@@ -313,6 +313,7 @@ export default function AdminDashboard() {
             {activeTab === 'promotions' && <AdminPromotionsTab />}
             {activeTab === 'suppliers' && <AdminSuppliersTab />}
             {activeTab === 'delivery-zones' && <AdminDeliveryZonesTab />}
+            {activeTab === 'kds' && <AdminKDSTab />}
             {activeTab === 'reports' && <AdminReportsTab orders={orders} />}
             {activeTab === 'roles' && <AdminRolesTab />}
             {activeTab === 'settings' && <AdminSettingsTab />}
