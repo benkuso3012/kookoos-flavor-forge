@@ -231,13 +231,28 @@ export default function AdminOrdersTab({ orders, statusColor, updateOrderStatus 
                             )}
                           </div>
 
-                          {/* Status Update */}
+                          {/* Status Update & Print */}
                           <div className="flex items-center justify-between pt-2 border-t border-border">
                             <div className="text-xs text-muted-foreground">
                               Placed {format(new Date(order.created_at), 'EEEE, MMM d yyyy \'at\' HH:mm')} ({waitMins} min ago)
                             </div>
                             <div className="flex items-center gap-2">
-                              <span className="text-xs text-muted-foreground">Update status:</span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-xs h-8 gap-1"
+                                disabled={!items || items.length === 0}
+                                onClick={() => {
+                                  if (items && items.length > 0) {
+                                    printReceipt(order, items);
+                                  } else {
+                                    toast.error('Load order items first');
+                                  }
+                                }}
+                              >
+                                <Printer className="w-3.5 h-3.5" /> Print Receipt
+                              </Button>
+                              <span className="text-xs text-muted-foreground">Status:</span>
                               <Select value={order.status} onValueChange={(v) => updateOrderStatus(order.id, v)}>
                                 <SelectTrigger className="w-[140px] h-8 text-xs">
                                   <SelectValue />
