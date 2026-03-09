@@ -39,7 +39,7 @@ interface MenuCategory {
 
 const EnhancedMenu = () => {
   const { toast } = useToast();
-  const { addItem: addToCartCtx, items: cartCtxItems, updateQuantity, totalItems: getTotalItems } = useCart();
+  const { addItem: addToCartCtx, totalItems: cartTotalItems } = useCart();
   const [cart, setCart] = useState<{ [key: string]: number }>({});
   const [user, setUser] = useState<User | null>(null);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
