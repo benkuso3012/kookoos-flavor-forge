@@ -112,11 +112,11 @@ const EnhancedMenu = () => {
     });
   };
 
-  const getTotalItems = () => Object.values(cart).reduce((t, q) => t + q, 0);
+  const getCartTotal = () => Object.values(cart).reduce((t, q) => t + q, 0);
 
   const proceedToCheckout = () => {
     if (!user) { toast({ title: "Sign in required", description: "Please sign in to place an order", variant: "destructive" }); navigate("/auth"); return; }
-    if (getTotalItems() === 0) { toast({ title: "Empty cart", description: "Please add items to your cart first", variant: "destructive" }); return; }
+    if (getCartTotal() === 0) { toast({ title: "Empty cart", description: "Please add items to your cart first", variant: "destructive" }); return; }
     const cartItems = Object.entries(cart).map(([id, quantity]) => {
       const item = menuItems.find((i) => i.id === id);
       return { id, name: item?.name || "", price: item?.price || 0, quantity };
