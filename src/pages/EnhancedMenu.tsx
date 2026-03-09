@@ -97,9 +97,10 @@ const EnhancedMenu = () => {
     setFilteredItems(filtered);
   };
 
-  const addToCart = (itemId: string, itemName: string) => {
-    setCart((prev) => ({ ...prev, [itemId]: (prev[itemId] || 0) + 1 }));
-    toast({ title: "Added to cart!", description: `${itemName} has been added to your cart.` });
+  const addToCart = (item: MenuItem) => {
+    addToCartCtx({ id: item.id, name: item.name, price: item.price, image_url: item.image_url });
+    setCart((prev) => ({ ...prev, [item.id]: (prev[item.id] || 0) + 1 }));
+    toast({ title: "Added to cart!", description: `${item.name} has been added to your cart.` });
   };
 
   const removeFromCart = (itemId: string) => {
