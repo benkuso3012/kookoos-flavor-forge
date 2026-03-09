@@ -105,6 +105,7 @@ const Header = () => {
           {/* User Menu / Auth Button */}
           <div className="hidden md:flex items-center space-x-2">
             <CartDrawer />
+            {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="h-8 w-8 rounded-full">
