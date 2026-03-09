@@ -225,7 +225,7 @@ const EnhancedMenu = () => {
                             <div className="flex items-center gap-3">
                               <Button size="sm" variant="outline" onClick={() => removeFromCart(item.id)}><Minus className="w-4 h-4" /></Button>
                               <span className="font-bold text-lg">{cart[item.id]}</span>
-                              <Button size="sm" onClick={() => addToCart(item.id, item.name)}><Plus className="w-4 h-4" /></Button>
+                              <Button size="sm" onClick={() => addToCart(item)}><Plus className="w-4 h-4" /></Button>
                             </div>
                           </div>
                         ) : (
