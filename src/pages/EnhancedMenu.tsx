@@ -229,7 +229,7 @@ const EnhancedMenu = () => {
                             </div>
                           </div>
                         ) : (
-                          <Button className="w-full bg-primary hover:bg-primary/90 font-bold group" onClick={() => addToCart(item.id, item.name)}>
+                          <Button className="w-full bg-primary hover:bg-primary/90 font-bold group" onClick={() => addToCart(item)}>
                             ADD TO CART
                             <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
                           </Button>
