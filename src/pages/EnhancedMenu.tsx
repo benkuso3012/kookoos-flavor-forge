@@ -13,6 +13,7 @@ import Footer from "@/components/Footer";
 import MenuFilters, { MenuFilter } from "@/components/MenuFilters";
 import FavoritesButton from "@/components/FavoritesButton";
 import LoyaltyCard from "@/components/LoyaltyCard";
+import { useCart } from "@/hooks/useCart";
 
 interface MenuItem {
   id: string;
