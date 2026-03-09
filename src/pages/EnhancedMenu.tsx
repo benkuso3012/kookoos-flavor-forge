@@ -13,6 +13,7 @@ import Footer from "@/components/Footer";
 import MenuFilters, { MenuFilter } from "@/components/MenuFilters";
 import FavoritesButton from "@/components/FavoritesButton";
 import LoyaltyCard from "@/components/LoyaltyCard";
+import { useCart } from "@/hooks/useCart";
 
 interface MenuItem {
   id: string;
@@ -38,6 +39,7 @@ interface MenuCategory {
 
 const EnhancedMenu = () => {
   const { toast } = useToast();
+  const { addItem: addToCartCtx, totalItems: cartTotalItems } = useCart();
   const [cart, setCart] = useState<{ [key: string]: number }>({});
   const [user, setUser] = useState<User | null>(null);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -95,9 +97,10 @@ const EnhancedMenu = () => {
     setFilteredItems(filtered);
   };
 
-  const addToCart = (itemId: string, itemName: string) => {
-    setCart((prev) => ({ ...prev, [itemId]: (prev[itemId] || 0) + 1 }));
-    toast({ title: "Added to cart!", description: `${itemName} has been added to your cart.` });
+  const addToCart = (item: MenuItem) => {
+    addToCartCtx({ id: item.id, name: item.name, price: item.price, image_url: item.image_url });
+    setCart((prev) => ({ ...prev, [item.id]: (prev[item.id] || 0) + 1 }));
+    toast({ title: "Added to cart!", description: `${item.name} has been added to your cart.` });
   };
 
   const removeFromCart = (itemId: string) => {
@@ -109,11 +112,11 @@ const EnhancedMenu = () => {
     });
   };
 
-  const getTotalItems = () => Object.values(cart).reduce((t, q) => t + q, 0);
+  const getCartTotal = () => Object.values(cart).reduce((t, q) => t + q, 0);
 
   const proceedToCheckout = () => {
     if (!user) { toast({ title: "Sign in required", description: "Please sign in to place an order", variant: "destructive" }); navigate("/auth"); return; }
-    if (getTotalItems() === 0) { toast({ title: "Empty cart", description: "Please add items to your cart first", variant: "destructive" }); return; }
+    if (getCartTotal() === 0) { toast({ title: "Empty cart", description: "Please add items to your cart first", variant: "destructive" }); return; }
     const cartItems = Object.entries(cart).map(([id, quantity]) => {
       const item = menuItems.find((i) => i.id === id);
       return { id, name: item?.name || "", price: item?.price || 0, quantity };
@@ -222,11 +225,11 @@ const EnhancedMenu = () => {
                             <div className="flex items-center gap-3">
                               <Button size="sm" variant="outline" onClick={() => removeFromCart(item.id)}><Minus className="w-4 h-4" /></Button>
                               <span className="font-bold text-lg">{cart[item.id]}</span>
-                              <Button size="sm" onClick={() => addToCart(item.id, item.name)}><Plus className="w-4 h-4" /></Button>
+                              <Button size="sm" onClick={() => addToCart(item)}><Plus className="w-4 h-4" /></Button>
                             </div>
                           </div>
                         ) : (
-                          <Button className="w-full bg-primary hover:bg-primary/90 font-bold group" onClick={() => addToCart(item.id, item.name)}>
+                          <Button className="w-full bg-primary hover:bg-primary/90 font-bold group" onClick={() => addToCart(item)}>
                             ADD TO CART
                             <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
                           </Button>
@@ -248,7 +251,7 @@ const EnhancedMenu = () => {
         </div>
       </main>
 
-      {getTotalItems() > 0 && (
+      {cartTotalItems > 0 && (
         <motion.div
           className="fixed bottom-6 right-6 z-50"
           initial={{ scale: 0 }}
@@ -261,7 +264,7 @@ const EnhancedMenu = () => {
             onClick={proceedToCheckout}
           >
             <ShoppingBag className="w-5 h-5 mr-2" />
-            Checkout ({getTotalItems()})
+            Checkout ({cartTotalItems})
           </Button>
         </motion.div>
       )}

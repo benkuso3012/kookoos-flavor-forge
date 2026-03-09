@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Menu, X, User, LogOut, Heart, MapPin, Percent, ShoppingBag, Star, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
+import CartDrawer from "@/components/CartDrawer";
 
 const Header = () => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
@@ -102,7 +103,8 @@ const Header = () => {
           </nav>
 
           {/* User Menu / Auth Button */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-2">
+            <CartDrawer />
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
